@@ -52,6 +52,59 @@ def _is_running() -> tuple[bool, int | None]:
     return False, None
 
 
+# ── SwiftBar auto-setup ─────────────────────────────────
+
+SWIFTBAR_PLUGIN_NAME = "sifu.5s.sh"
+SWIFTBAR_PLUGINS_DIR = Path.home() / "Library/Application Support/SwiftBar/Plugins"
+SWIFTBAR_MARKER = SIFU_DIR / ".swiftbar_installed"
+
+
+def _ensure_swiftbar():
+    """Auto-install the SwiftBar plugin if SwiftBar is present."""
+    # Skip if already set up
+    if SWIFTBAR_MARKER.exists():
+        return
+
+    # Find the bundled plugin
+    plugin_src = Path(__file__).parent.parent.parent / "extras" / "swiftbar" / SWIFTBAR_PLUGIN_NAME
+    if not plugin_src.exists():
+        return
+
+    # Check if SwiftBar is installed (brew cask or /Applications)
+    swiftbar_app = None
+    for candidate in [
+        Path("/Applications/SwiftBar.app"),
+        *Path("/opt/homebrew/Caskroom/swiftbar").glob("*/SwiftBar.app"),
+        *Path(os.path.expanduser("~/Applications")).glob("SwiftBar.app"),
+    ]:
+        if candidate.exists():
+            swiftbar_app = candidate
+            break
+
+    if not swiftbar_app:
+        return
+
+    # Create plugins dir and symlink
+    SWIFTBAR_PLUGINS_DIR.mkdir(parents=True, exist_ok=True)
+    link_path = SWIFTBAR_PLUGINS_DIR / SWIFTBAR_PLUGIN_NAME
+    if not link_path.exists():
+        link_path.symlink_to(plugin_src.resolve())
+        click.echo(f"  SwiftBar plugin installed → {link_path}")
+
+    # Launch SwiftBar if not running
+    try:
+        result = subprocess.run(["pgrep", "-x", "SwiftBar"], capture_output=True)
+        if result.returncode != 0:
+            subprocess.Popen(["open", str(swiftbar_app)])
+            click.echo("  SwiftBar launched.")
+    except Exception:
+        pass
+
+    # Mark as done so we don't re-check every start
+    SIFU_DIR.mkdir(parents=True, exist_ok=True)
+    SWIFTBAR_MARKER.touch()
+
+
 # ── Public API (called from CLI) ────────────────────────
 
 
@@ -61,6 +114,9 @@ def start_daemon():
     if running:
         click.echo(f"Sifu is already running (PID {pid}).")
         return
+
+    # Auto-setup SwiftBar on first run
+    _ensure_swiftbar()
 
     from sifu.storage.db import init_db, create_session, close_stale_sessions
 
