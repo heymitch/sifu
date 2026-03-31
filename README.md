@@ -40,6 +40,16 @@ sifu sensitive       # panic button: pause + purge last 5 min
 sifu config          # show/edit settings
 ```
 
+## Where SOPs are saved
+
+By default, compiled SOPs land in `~/.sifu/output/sops/`. To save them somewhere more visible (a shared folder, a knowledge base, Obsidian vault, etc.):
+
+```bash
+sifu config sops_dir ~/path/to/your/sops-folder
+```
+
+The compile command always prints the save location so you know where to look.
+
 ## SwiftBar (menu bar toggle)
 
 ```bash

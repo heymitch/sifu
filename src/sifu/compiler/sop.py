@@ -166,6 +166,10 @@ def compile_workflows(workflow=None, today=False, watch=False):
     """Compile workflow segments into SOPs."""
     import click
 
+    sops_dir = _get_sops_dir()
+    click.echo(f"  SOPs will be saved to: {sops_dir}")
+    click.echo(f"  (change with: sifu config sops_dir <path>)\n")
+
     if workflow:
         path = compile_single(workflow)
         click.echo(f"Compiled: {path}")
