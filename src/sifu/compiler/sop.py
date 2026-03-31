@@ -3,7 +3,12 @@
 import subprocess
 from pathlib import Path
 
-SOPS_DIR = Path.home() / ".sifu" / "output" / "sops"
+
+def _get_sops_dir() -> Path:
+    """Get configured SOPs directory."""
+    from sifu.config import load_config
+    config = load_config()
+    return Path(config.get("sops_dir", str(Path.home() / ".sifu" / "output" / "sops")))
 
 
 # ---------------------------------------------------------------------------
@@ -96,8 +101,9 @@ def compile_single(workflow_id: str) -> Path:
     sop_content = result.stdout.strip()
     sop_content = _add_screenshot_refs(sop_content, events)
 
-    SOPS_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = SOPS_DIR / f"{workflow_id}.md"
+    sops_dir = _get_sops_dir()
+    sops_dir.mkdir(parents=True, exist_ok=True)
+    output_path = sops_dir / f"{workflow_id}.md"
     output_path.write_text(sop_content, encoding="utf-8")
 
     return output_path
@@ -109,9 +115,10 @@ def compile_single(workflow_id: str) -> Path:
 
 def _get_compiled_ids() -> set:
     """Return set of workflow IDs that already have compiled SOPs."""
-    if not SOPS_DIR.exists():
+    sops_dir = _get_sops_dir()
+    if not sops_dir.exists():
         return set()
-    return {p.stem for p in SOPS_DIR.glob("*.md")}
+    return {p.stem for p in sops_dir.glob("*.md")}
 
 
 def _compile_uncompiled(today_only: bool = False) -> None:
@@ -183,11 +190,12 @@ def list_sops():
     """List generated SOPs."""
     import click
 
-    if not SOPS_DIR.exists():
+    sops_dir = _get_sops_dir()
+    if not sops_dir.exists():
         click.echo("No SOPs compiled yet. Run 'sifu compile' first.")
         return
 
-    sops = sorted(SOPS_DIR.glob("*.md"))
+    sops = sorted(sops_dir.glob("*.md"))
     if not sops:
         click.echo("No SOPs compiled yet.")
         return
