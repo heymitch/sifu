@@ -17,27 +17,45 @@ Leave Sifu on for a day. At the end you have:
 ## Install
 
 ```bash
-git clone <repo-url> ~/sifu
+git clone https://github.com/heymitch/sifu.git ~/sifu
 cd ~/sifu
 pip install -e .
 ```
 
-## Usage
+## How it works
+
+```
+sifu start       →  capture daemon runs in background
+                     (clicks, keystrokes, shortcuts, app switches, screenshots)
+do your work     →  Sifu watches silently (<1% CPU, ~30MB RAM)
+sifu stop        →  daemon stops → patterns detected → SOPs compiled
+                     → each SOP opens in Sublime Text → macOS notification
+```
+
+That's it. Start, work, stop, SOPs appear.
+
+## Commands
 
 ```bash
+# Capture
 sifu start           # start capture daemon (background)
-sifu stop            # stop + auto-analyze session
+sifu stop            # stop + auto-compile SOPs + coaching
 sifu status          # is it running? how many events?
 sifu pause / resume  # temporarily pause capture
 
+# Review
 sifu log             # show today's action log
 sifu patterns        # detected workflow patterns
-sifu compile         # generate SOPs from patterns (uses Claude)
-sifu coach --today   # efficiency coaching report (uses Claude)
+sifu sessions        # list work sessions
+
+# Generate (uses Claude Code)
+sifu compile         # generate SOPs from patterns
+sifu coach --today   # efficiency coaching report
 sifu automate        # list automation candidates
 
-sifu sensitive       # panic button: pause + purge last 5 min
+# Config
 sifu config          # show/edit settings
+sifu sensitive       # panic button: pause + purge last 5 min
 ```
 
 ## Where SOPs are saved
@@ -48,7 +66,7 @@ By default, compiled SOPs land in `~/.sifu/output/sops/`. To save them somewhere
 sifu config sops_dir ~/path/to/your/sops-folder
 ```
 
-The compile command always prints the save location so you know where to look.
+Compiled SOPs auto-open in Sublime Text and you get a macOS notification when compilation finishes.
 
 ## SwiftBar (menu bar toggle)
 
@@ -57,6 +75,11 @@ brew install swiftbar
 ln -s ~/sifu/extras/swiftbar/sifu.5s.sh \
   ~/Library/Application\ Support/SwiftBar/Plugins/
 ```
+
+Shows recording status in the menu bar:
+- **🔴 Sifu** — recording (click for stop/pause/sensitive)
+- **⏸ Sifu** — paused
+- **⚪ Sifu** — idle (click to start)
 
 ## Privacy
 
