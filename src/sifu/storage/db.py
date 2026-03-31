@@ -110,6 +110,17 @@ def query_events(app=None, last=None, limit=50):
         click.echo(f"  {ts}  {row['type']:15s}  {row['app'] or '':20s}  {detail}")
 
 
+def close_stale_sessions(conn: sqlite3.Connection):
+    """Close any sessions stuck in 'active' (no end_time) when daemon isn't running."""
+    from datetime import datetime
+    now = datetime.now().isoformat()
+    conn.execute(
+        "UPDATE sessions SET end_time = ? WHERE end_time IS NULL",
+        (now,),
+    )
+    conn.commit()
+
+
 def list_sessions():
     """List work sessions. Called from CLI."""
     import click

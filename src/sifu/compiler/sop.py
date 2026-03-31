@@ -194,8 +194,14 @@ def list_sops():
 
     click.echo(f"\n  {len(sops)} compiled SOP{'s' if len(sops) != 1 else ''}:\n")
     for sop in sops:
-        first_line = sop.read_text(encoding="utf-8").split("\n")[0].replace("# ", "")
+        title = ""
+        for line in sop.read_text(encoding="utf-8").split("\n"):
+            if line.startswith("# "):
+                title = line.lstrip("# ").strip()
+                break
+        if not title:
+            title = sop.stem
         size = sop.stat().st_size
         click.echo(
-            f"  {sop.stem:30s}  {first_line[:50]:50s}  ({size} bytes)"
+            f"  {sop.stem:30s}  {title[:50]:50s}  ({size} bytes)"
         )

@@ -62,10 +62,11 @@ def start_daemon():
         click.echo(f"Sifu is already running (PID {pid}).")
         return
 
-    from sifu.storage.db import init_db, create_session
+    from sifu.storage.db import init_db, create_session, close_stale_sessions
 
     SIFU_DIR.mkdir(parents=True, exist_ok=True)
     conn = init_db()
+    close_stale_sessions(conn)
 
     session_id = f"session-{uuid.uuid4().hex[:8]}"
     start_time = time.strftime("%Y-%m-%dT%H:%M:%S")
