@@ -109,35 +109,37 @@ def stop_daemon():
     _write_state({"status": "stopped"})
     click.echo("Sifu stopped.")
 
-    # Auto-launch analysis if there were events captured
-    if event_count > 0 or session_id:
-        click.echo("\nAnalyzing session...")
-        _launch_analysis()
+    # Auto-launch analysis
+    click.echo("\nAnalyzing session...")
+    _launch_analysis()
 
 
 def _launch_analysis():
-    """Run pattern detection + compile SOPs + coaching in the background."""
-    # Patterns first (local, fast, no LLM)
+    """Run pattern detection → compile SOPs → coaching, all inline."""
+    # 1. Patterns (local, fast, no LLM)
     try:
         from sifu.patterns.engine import show_patterns
         show_patterns(today=True)
     except Exception as exc:
         click.echo(f"  Pattern detection: {exc}")
 
-    # Compile + coach via Claude CLI (background, non-blocking)
-    click.echo("\nLaunching compiler + coach (background)...")
+    # 2. Compile SOPs (calls Claude CLI — runs inline so user sees results)
+    click.echo("\nCompiling SOPs...")
+    try:
+        from sifu.compiler.sop import compile_workflows
+        compile_workflows(today=True)
+    except Exception as exc:
+        click.echo(f"  Compile error: {exc}")
+
+    # 3. Coach (calls Claude CLI — runs in background, less urgent)
+    click.echo("\nLaunching coach (background)...")
     log_fh = open(LOG_FILE, "a")
-    subprocess.Popen(
-        [sys.executable, "-c",
-         "from sifu.compiler.sop import compile_workflows; compile_workflows(today=True)"],
-        stdout=log_fh, stderr=log_fh, start_new_session=True,
-    )
     subprocess.Popen(
         [sys.executable, "-c",
          "from sifu.coach.analyzer import run_coach; run_coach(today=True)"],
         stdout=log_fh, stderr=log_fh, start_new_session=True,
     )
-    click.echo("  SOPs + coaching running in background. Check 'sifu sops' and '~/.sifu/output/coach/' when done.")
+    click.echo("  Coaching report building in background → ~/.sifu/output/coach/")
 
 
 def pause_daemon():

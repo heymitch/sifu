@@ -181,7 +181,8 @@ def generate_automation(workflow_id: str) -> Path:
 
     click.echo("  Calling Claude to generate script...")
     result = subprocess.run(
-        ["claude", "-p", prompt],
+        ["claude", "-p"],
+        input=prompt,
         capture_output=True,
         text=True,
         timeout=120,

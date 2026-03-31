@@ -4,6 +4,19 @@ import subprocess
 from pathlib import Path
 
 
+def _notify(compiled_count: int):
+    """Send a macOS notification when compilation finishes."""
+    if compiled_count > 0:
+        sops_dir = _get_sops_dir()
+        msg = f"{compiled_count} SOP{'s' if compiled_count != 1 else ''} compiled → {sops_dir}"
+    else:
+        msg = "No new SOPs to compile."
+    subprocess.Popen([
+        "osascript", "-e",
+        f'display notification "{msg}" with title "Sifu"',
+    ])
+
+
 def _get_sops_dir() -> Path:
     """Get configured SOPs directory."""
     from sifu.config import load_config
@@ -89,7 +102,8 @@ def compile_single(workflow_id: str) -> Path:
     prompt = _build_prompt(events)
 
     result = subprocess.run(
-        ["claude", "-p", prompt],
+        ["claude", "-p"],
+        input=prompt,
         capture_output=True,
         text=True,
         timeout=120,
@@ -138,6 +152,7 @@ def _compile_uncompiled(today_only: bool = False) -> None:
         click.echo("No workflow segments found.")
         return
 
+    compiled_count = 0
     for seg in segments:
         wf_id = seg.get("workflow_id")
         if not wf_id:
@@ -150,12 +165,27 @@ def _compile_uncompiled(today_only: bool = False) -> None:
             if today_str not in seg.get("start_time", ""):
                 continue
 
+        # Skip noise: segments that are all window_switch or < 3 meaningful events
+        types = seg.get("types", [])
+        event_count = seg.get("event_count", 0)
+        meaningful_types = [t for t in types if t != "window_switch"]
+        if not meaningful_types and event_count > 0:
+            click.echo(f"  Skipping {wf_id} (window switches only)")
+            continue
+        if event_count < 3:
+            click.echo(f"  Skipping {wf_id} ({event_count} events — too short)")
+            continue
+
         click.echo(f"  Compiling {wf_id}...")
         try:
             path = compile_single(wf_id)
             click.echo(f"  ✓ {path}")
+            compiled_count += 1
         except Exception as exc:
             click.echo(f"  ✗ {wf_id}: {exc}")
+
+    # macOS notification when done
+    _notify(compiled_count)
 
 
 # ---------------------------------------------------------------------------

@@ -208,7 +208,8 @@ def _get_llm_insights(events: list[dict], local_findings: list[dict]) -> str:
 
     try:
         result = subprocess.run(
-            ["claude", "-p", prompt],
+            ["claude", "-p"],
+            input=prompt,
             capture_output=True,
             text=True,
             timeout=60,
