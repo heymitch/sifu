@@ -52,25 +52,52 @@ def _is_running() -> tuple[bool, int | None]:
     return False, None
 
 
-# ── SwiftBar auto-setup ─────────────────────────────────
+# ── Menu bar auto-setup ─────────────────────────────────
 
 SWIFTBAR_PLUGIN_NAME = "sifu.5s.sh"
 SWIFTBAR_PLUGINS_DIR = Path.home() / "Library/Application Support/SwiftBar/Plugins"
-SWIFTBAR_MARKER = SIFU_DIR / ".swiftbar_installed"
+BAR_MARKER = SIFU_DIR / ".menubar_installed"
 
 
 def _ensure_swiftbar():
-    """Auto-install the SwiftBar plugin if SwiftBar is present."""
-    # Skip if already set up
-    if SWIFTBAR_MARKER.exists():
+    """Auto-launch the menu bar widget (SifuBar or SwiftBar)."""
+    # Try SifuBar first (pure Python, works on all macOS versions)
+    if _launch_sifubar():
         return
 
-    # Find the bundled plugin
+    # Fall back to SwiftBar if installed
+    _setup_swiftbar()
+
+
+def _launch_sifubar():
+    """Launch the native Python menu bar widget if not already running."""
+    try:
+        result = subprocess.run(["pgrep", "-f", "sifu.bar.app"], capture_output=True)
+        if result.returncode == 0:
+            return True  # already running
+
+        # Launch in background
+        subprocess.Popen(
+            [sys.executable, "-m", "sifu.bar.app"],
+            stdout=open(LOG_FILE, "a"),
+            stderr=open(LOG_FILE, "a"),
+            start_new_session=True,
+        )
+        click.echo("  SifuBar launched (menu bar widget).")
+        return True
+    except Exception:
+        return False
+
+
+def _setup_swiftbar():
+    """Install the SwiftBar plugin if SwiftBar is present (legacy fallback)."""
+    if BAR_MARKER.exists():
+        return
+
     plugin_src = Path(__file__).parent.parent.parent / "extras" / "swiftbar" / SWIFTBAR_PLUGIN_NAME
     if not plugin_src.exists():
         return
 
-    # Check if SwiftBar is installed (brew cask or /Applications)
     swiftbar_app = None
     for candidate in [
         Path("/Applications/SwiftBar.app"),
@@ -84,14 +111,12 @@ def _ensure_swiftbar():
     if not swiftbar_app:
         return
 
-    # Create plugins dir and symlink
     SWIFTBAR_PLUGINS_DIR.mkdir(parents=True, exist_ok=True)
     link_path = SWIFTBAR_PLUGINS_DIR / SWIFTBAR_PLUGIN_NAME
     if not link_path.exists():
         link_path.symlink_to(plugin_src.resolve())
         click.echo(f"  SwiftBar plugin installed → {link_path}")
 
-    # Launch SwiftBar if not running
     try:
         result = subprocess.run(["pgrep", "-x", "SwiftBar"], capture_output=True)
         if result.returncode != 0:
@@ -100,9 +125,8 @@ def _ensure_swiftbar():
     except Exception:
         pass
 
-    # Mark as done so we don't re-check every start
     SIFU_DIR.mkdir(parents=True, exist_ok=True)
-    SWIFTBAR_MARKER.touch()
+    BAR_MARKER.touch()
 
 
 # ── Public API (called from CLI) ────────────────────────

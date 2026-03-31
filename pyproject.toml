@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 sifu = "sifu.cli:main"
+sifubar = "sifu.bar.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

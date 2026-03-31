@@ -68,11 +68,13 @@ sifu config sops_dir ~/path/to/your/sops-folder
 
 Compiled SOPs auto-open in Sublime Text and you get a macOS notification when compilation finishes.
 
-## Menu bar (SwiftBar)
+## Menu bar
 
-SwiftBar setup is **automatic** — the first time you run `sifu start`, it detects SwiftBar and installs the plugin. If SwiftBar isn't running, it launches it.
+The menu bar widget launches **automatically** with `sifu start`. No setup needed.
 
-If you don't have SwiftBar: `brew install swiftbar`
+It uses SifuBar (a native Python widget bundled with Sifu) that works on all macOS versions including Tahoe. Falls back to SwiftBar if installed.
+
+You can also launch it standalone: `sifubar`
 
 Shows recording status in the menu bar:
 - **🔴 Sifu** — recording (click for stop/pause/sensitive)
