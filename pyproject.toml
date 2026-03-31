@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sifu"
+version = "0.1.0"
+description = "Local action logger that turns workflow into SOPs, tutorials, and automation"
+requires-python = ">=3.11"
+dependencies = [
+    "pyobjc-framework-Quartz>=10.0",
+    "pyobjc-framework-Cocoa>=10.0",
+    "click>=8.0",
+]
+
+[project.scripts]
+sifu = "sifu.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
