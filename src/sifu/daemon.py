@@ -93,15 +93,50 @@ def start_daemon():
 
 
 def stop_daemon():
-    """Stop the capture daemon."""
+    """Stop the capture daemon and launch analysis."""
     running, pid = _is_running()
     if not running:
         click.echo("Sifu is not running.")
         return
+
+    state = _read_state()
+    event_count = state.get("events", 0)
+    session_id = state.get("session_id")
+
     os.kill(pid, signal.SIGTERM)
     PID_FILE.unlink(missing_ok=True)
     _write_state({"status": "stopped"})
     click.echo("Sifu stopped.")
+
+    # Auto-launch analysis if there were events captured
+    if event_count > 0 or session_id:
+        click.echo("\nAnalyzing session...")
+        _launch_analysis()
+
+
+def _launch_analysis():
+    """Run pattern detection + compile SOPs + coaching in the background."""
+    # Patterns first (local, fast, no LLM)
+    try:
+        from sifu.patterns.engine import show_patterns
+        show_patterns(today=True)
+    except Exception as exc:
+        click.echo(f"  Pattern detection: {exc}")
+
+    # Compile + coach via Claude CLI (background, non-blocking)
+    click.echo("\nLaunching compiler + coach (background)...")
+    log_fh = open(LOG_FILE, "a")
+    subprocess.Popen(
+        [sys.executable, "-c",
+         "from sifu.compiler.sop import compile_workflows; compile_workflows(today=True)"],
+        stdout=log_fh, stderr=log_fh, start_new_session=True,
+    )
+    subprocess.Popen(
+        [sys.executable, "-c",
+         "from sifu.coach.analyzer import run_coach; run_coach(today=True)"],
+        stdout=log_fh, stderr=log_fh, start_new_session=True,
+    )
+    click.echo("  SOPs + coaching running in background. Check 'sifu sops' and '~/.sifu/output/coach/' when done.")
 
 
 def pause_daemon():

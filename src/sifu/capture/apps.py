@@ -141,7 +141,7 @@ class AppTracker:
         """Schedule the next window-title poll, unless stop() was called."""
         if self._stop_event.is_set():
             return
-        self._poll_timer = threading.Timer(1.0, self._poll_window_title)
+        self._poll_timer = threading.Timer(3.0, self._poll_window_title)
         self._poll_timer.daemon = True
         self._poll_timer.start()
 
