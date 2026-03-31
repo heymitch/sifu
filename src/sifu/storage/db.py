@@ -42,7 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_events_app ON events(app);
 def init_db() -> sqlite3.Connection:
     """Initialize the database, creating tables if needed."""
     SIFU_DIR.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
     conn.commit()
@@ -53,7 +53,7 @@ def get_connection() -> sqlite3.Connection:
     """Get a database connection, initializing if needed."""
     if not DB_PATH.exists():
         return init_db()
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 

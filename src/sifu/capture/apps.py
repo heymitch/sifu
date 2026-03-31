@@ -13,6 +13,7 @@ from typing import Optional
 from AppKit import NSWorkspace
 from Foundation import NSObject
 import ApplicationServices as AS
+import objc
 
 from sifu.events import Event, EventType
 from sifu.storage.db import insert_event
@@ -22,7 +23,7 @@ class _AppObserver(NSObject):
     """NSObject subclass that acts as the NSWorkspace notification observer."""
 
     def initWithTracker_(self, tracker: "AppTracker") -> Optional["_AppObserver"]:
-        self = super().init()
+        self = objc.super(_AppObserver, self).init()
         if self is None:
             return None
         self.tracker = tracker

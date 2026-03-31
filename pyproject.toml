@@ -10,6 +10,7 @@ requires-python = ">=3.11"
 dependencies = [
     "pyobjc-framework-Quartz>=10.0",
     "pyobjc-framework-Cocoa>=10.0",
+    "pyobjc-framework-ApplicationServices>=10.0",
     "click>=8.0",
 ]
 

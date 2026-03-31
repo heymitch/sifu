@@ -1,13 +1,17 @@
 """Sifu capture daemon — Layer 0.
 
-Forks into a background process that captures user actions via macOS
-CGEventTap and Accessibility APIs.  The parent process writes a PID file
-and returns immediately so the CLI stays snappy.
+Spawns a background process (via subprocess, NOT fork) that captures user
+actions via macOS CGEventTap and Accessibility APIs.  The parent writes a
+PID file and returns immediately so the CLI stays snappy.
+
+macOS Cocoa/CoreFoundation frameworks are not fork-safe, so we use
+subprocess.Popen to launch a clean Python process for the capture loop.
 """
 
 import json
 import os
 import signal
+import subprocess
 import sys
 import time
 import uuid
@@ -18,6 +22,7 @@ import click
 SIFU_DIR = Path.home() / ".sifu"
 PID_FILE = SIFU_DIR / "daemon.pid"
 STATE_FILE = SIFU_DIR / "daemon.state"
+LOG_FILE = SIFU_DIR / "daemon.log"
 
 
 # ── State helpers ───────────────────────────────────────
@@ -67,25 +72,24 @@ def start_daemon():
     create_session(conn, session_id, start_time)
     conn.close()
 
-    pid = os.fork()
-    if pid > 0:
-        # Parent — record PID and return to CLI
-        PID_FILE.write_text(str(pid))
-        _write_state({
-            "status": "recording",
-            "session_id": session_id,
-            "start_time": start_time,
-            "events": 0,
-        })
-        click.echo(f"Sifu started (PID {pid}).  Session: {session_id}")
-        return
+    _write_state({
+        "status": "recording",
+        "session_id": session_id,
+        "start_time": start_time,
+        "events": 0,
+    })
 
-    # Child — detach and run capture loop
-    os.setsid()
+    # Spawn a clean process — do NOT fork (macOS Cocoa is not fork-safe)
+    log_fh = open(LOG_FILE, "a")
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "sifu.daemon", session_id],
+        stdout=log_fh,
+        stderr=log_fh,
+        start_new_session=True,
+    )
 
-    # Re-open DB in child process (SQLite connections don't survive fork)
-    child_conn = init_db()
-    _run_capture_loop(child_conn, session_id)
+    PID_FILE.write_text(str(proc.pid))
+    click.echo(f"Sifu started (PID {proc.pid}).  Session: {session_id}")
 
 
 def stop_daemon():
@@ -189,20 +193,22 @@ def toggle_sensitive():
     )
 
 
-# ── Capture loop (runs in forked child) ─────────────────
+# ── Capture loop (runs in spawned child process) ────────
 
 
 _paused = False
 
 
-def _run_capture_loop(conn, session_id: str):
+def _run_capture_loop(session_id: str):
     """Main capture loop — sets up event taps and enters CFRunLoop."""
+    from sifu.storage.db import init_db
     from sifu.capture.mouse import MouseCapture
     from sifu.capture.keyboard import KeyboardCapture
     from sifu.capture.apps import AppTracker
     from sifu.capture.screenshots import ScreenshotCapture
     from sifu.config import load_config
 
+    conn = init_db()
     config = load_config()
     screenshot = ScreenshotCapture(config)
 
@@ -248,7 +254,20 @@ def _run_capture_loop(conn, session_id: str):
     keyboard.start(screenshot_callback=screenshot.capture)
     app_tracker.start()
 
+    print(f"Sifu daemon running (PID {os.getpid()}, session {session_id})")
+    sys.stdout.flush()
+
     # macOS event taps require a CFRunLoop
     from Quartz import CFRunLoopRun
 
     CFRunLoopRun()
+
+
+# ── Entry point for subprocess spawning ──────────────────
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python -m sifu.daemon <session_id>", file=sys.stderr)
+        sys.exit(1)
+    _run_capture_loop(sys.argv[1])

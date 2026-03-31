@@ -296,9 +296,8 @@ class KeyboardCapture:
 
         if self._screenshot_callback:
             try:
-                path = self._screenshot_callback(app=app_name, window=window)
+                path = self._screenshot_callback(ev)
                 if path:
-                    # Update screenshot_path on the last-inserted row
                     self._conn.execute(
                         "UPDATE events SET screenshot_path = ? WHERE id = (SELECT MAX(id) FROM events)",
                         (path,),
@@ -379,7 +378,7 @@ class KeyboardCapture:
 
         if self._screenshot_callback:
             try:
-                path = self._screenshot_callback(app=app_name, window=window)
+                path = self._screenshot_callback(ev)
                 if path:
                     self._conn.execute(
                         "UPDATE events SET screenshot_path = ? WHERE id = (SELECT MAX(id) FROM events)",
