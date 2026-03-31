@@ -4,6 +4,14 @@ import subprocess
 from pathlib import Path
 
 
+def _open_sops(paths: list):
+    """Open compiled SOPs in Sublime Text (or default editor)."""
+    if not paths:
+        return
+    for path in paths:
+        subprocess.Popen(["open", "-a", "Sublime Text", str(path)])
+
+
 def _notify(compiled_count: int):
     """Send a macOS notification when compilation finishes."""
     if compiled_count > 0:
@@ -54,6 +62,23 @@ def _build_prompt(events) -> str:
         lines.append(f"  {i}. {' '.join(parts)}")
     lines.append("---")
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Content cleanup
+# ---------------------------------------------------------------------------
+
+def _strip_insight_blocks(content: str) -> str:
+    """Remove Claude's ★ Insight decoration blocks from SOP output."""
+    import re
+    # Remove backtick-fenced insight blocks
+    content = re.sub(
+        r'`★ Insight[^`]*`\n.*?\n`─+`\n*',
+        '', content, flags=re.DOTALL,
+    )
+    # Strip leading whitespace/dashes left behind
+    content = content.lstrip('\n -')
+    return content
 
 
 # ---------------------------------------------------------------------------
@@ -113,6 +138,7 @@ def compile_single(workflow_id: str) -> Path:
         raise RuntimeError(f"Claude CLI failed: {result.stderr.strip()}")
 
     sop_content = result.stdout.strip()
+    sop_content = _strip_insight_blocks(sop_content)
     sop_content = _add_screenshot_refs(sop_content, events)
 
     sops_dir = _get_sops_dir()
@@ -153,6 +179,7 @@ def _compile_uncompiled(today_only: bool = False) -> None:
         return
 
     compiled_count = 0
+    compiled_paths = []
     for seg in segments:
         wf_id = seg.get("workflow_id")
         if not wf_id:
@@ -181,10 +208,12 @@ def _compile_uncompiled(today_only: bool = False) -> None:
             path = compile_single(wf_id)
             click.echo(f"  ✓ {path}")
             compiled_count += 1
+            compiled_paths.append(path)
         except Exception as exc:
             click.echo(f"  ✗ {wf_id}: {exc}")
 
-    # macOS notification when done
+    # Open compiled SOPs in Sublime Text and notify
+    _open_sops(compiled_paths)
     _notify(compiled_count)
 
 
