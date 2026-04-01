@@ -175,6 +175,40 @@ final class EventStore: @unchecked Sendable {
         return paths
     }
 
+    /// Delete all events for a session and return their screenshot paths.
+    func purgeSession(_ sessionId: String) -> [String] {
+        var paths: [String] = []
+        queue.sync {
+            // Collect screenshot paths
+            let selectSQL = "SELECT screenshot_path FROM events WHERE session_id = ? AND screenshot_path IS NOT NULL"
+            var stmt: OpaquePointer?
+            if sqlite3_prepare_v2(db, selectSQL, -1, &stmt, nil) == SQLITE_OK {
+                sqlite3_bind_text(stmt, 1, (sessionId as NSString).utf8String, -1, nil)
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                    if let cStr = sqlite3_column_text(stmt, 0) {
+                        paths.append(String(cString: cStr))
+                    }
+                }
+                sqlite3_finalize(stmt)
+            }
+            // Delete events
+            let deleteEventsSQL = "DELETE FROM events WHERE session_id = ?"
+            if sqlite3_prepare_v2(db, deleteEventsSQL, -1, &stmt, nil) == SQLITE_OK {
+                sqlite3_bind_text(stmt, 1, (sessionId as NSString).utf8String, -1, nil)
+                sqlite3_step(stmt)
+                sqlite3_finalize(stmt)
+            }
+            // Delete session record
+            let deleteSessionSQL = "DELETE FROM sessions WHERE id = ?"
+            if sqlite3_prepare_v2(db, deleteSessionSQL, -1, &stmt, nil) == SQLITE_OK {
+                sqlite3_bind_text(stmt, 1, (sessionId as NSString).utf8String, -1, nil)
+                sqlite3_step(stmt)
+                sqlite3_finalize(stmt)
+            }
+        }
+        return paths
+    }
+
     // MARK: - Helpers
 
     private static func bindOptionalText(_ stmt: OpaquePointer?, _ index: Int32, _ value: String?) {

@@ -242,9 +242,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             stopItem.target = self
             menu.addItem(stopItem)
 
-            let stopOnlyItem = NSMenuItem(title: "\u{23F9} Stop (no analysis)", action: #selector(stopOnlyAction), keyEquivalent: "")
-            stopOnlyItem.target = self
-            menu.addItem(stopOnlyItem)
+            let cancelItem = NSMenuItem(title: "\u{1F5D1} Cancel Recording", action: #selector(cancelAction), keyEquivalent: "")
+            cancelItem.target = self
+            menu.addItem(cancelItem)
 
             if isPaused {
                 let resumeItem = NSMenuItem(title: "\u{25B6} Resume", action: #selector(resumeAction), keyEquivalent: "")
@@ -345,8 +345,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         stopCapture()
         runSifuInTerminal("_analyze")
     }
-    @objc private func stopOnlyAction() {
+    @objc private func cancelAction() {
+        // Delete this session's events and screenshots, then stop
+        let sessionId = sessionManager.sessionId
         stopCapture()
+        if let sid = sessionId {
+            let deletedPaths = eventStore.purgeSession(sid)
+            for path in deletedPaths {
+                try? FileManager.default.removeItem(atPath: path)
+            }
+        }
     }
     @objc private func pauseAction() { pauseCapture() }
     @objc private func resumeAction() { resumeCapture() }
