@@ -7,7 +7,13 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "SifuBar",
-            path: "SifuBar"
+            path: "SifuBar",
+            resources: [
+                .copy("Info.plist"),
+            ],
+            linkerSettings: [
+                .linkedLibrary("sqlite3"),
+            ]
         ),
     ]
 )
