@@ -10,6 +10,7 @@ Sifu is a local, always-on action logger that turns workflow into SOPs, tutorial
 - **Layer 2: Compiler** — LLM-powered SOP generation from raw logs
 - **Layer 3: Coach** — LLM-powered efficiency analysis + shortcut suggestions
 - **Layer 4: Automator** — LLM-powered script generation (dev-browser, computer use, bash, AppleScript)
+- **Classifier** — discovers automation capabilities, classifies each workflow step into optimal method (ELIMINATE, WAIT_FOR, API, CLI, BROWSER, MACRO, MANUAL)
 
 **Rule**: Layer 0 never calls an LLM. It logs events to SQLite and takes screenshots. That's it. Everything else runs on demand.
 
@@ -31,6 +32,10 @@ Sifu is a local, always-on action logger that turns workflow into SOPs, tutorial
 - `src/sifu/compiler/sop.py` — SOP markdown generation
 - `src/sifu/coach/analyzer.py` — efficiency coaching
 - `src/sifu/automator/generator.py` — automation script generation
+- `src/sifu/classifier/discovery.py` — capability scanning (CLI, MCP, extensions)
+- `src/sifu/classifier/classifier.py` — two-phase step classification
+- `src/sifu/classifier/spec.py` — workflow spec YAML I/O
+- `examples/capabilities.d/` — sample capability descriptors
 
 ## Agentic Engineering Laws
 

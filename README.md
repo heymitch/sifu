@@ -77,9 +77,49 @@ It uses SifuBar (a native Python widget bundled with Sifu) that works on all mac
 You can also launch it standalone: `sifubar`
 
 Shows recording status in the menu bar:
-- **🔴 Sifu** — recording (click for stop/pause/sensitive)
-- **⏸ Sifu** — paused
-- **⚪ Sifu** — idle (click to start)
+- **◉ Sifu** — recording (click for stop/pause/sensitive)
+- **◎ Sifu** — paused
+- **◇ Sifu** — idle (click to start)
+
+## Classify — optimize workflows for automation
+
+Discover what tools you have and classify each step of a recorded workflow into the most efficient execution method.
+
+```bash
+# Show what automation tools are available
+sifu classify --discover
+
+# Classify a specific workflow
+sifu classify wf-2026-03-31-001
+
+# Classify all workflows
+sifu classify --all
+
+# Re-classify after adding new capabilities
+sifu classify --reclassify ~/.sifu/output/workflows/deploy.workflow.yaml
+
+# See what would change
+sifu classify --diff ~/.sifu/output/workflows/deploy.workflow.yaml
+```
+
+### Custom capabilities
+
+Drop YAML files in `~/.sifu/capabilities.d/` to teach the classifier about your tools:
+
+```yaml
+# ~/.sifu/capabilities.d/slack.yaml
+name: slack
+type: mcp
+description: "Slack messaging"
+matches:
+  - app: "Slack"
+  - url_contains: "slack.com"
+actions:
+  - send_message
+  - read_channel
+```
+
+See `examples/capabilities.d/` for more examples.
 
 ## Privacy
 
