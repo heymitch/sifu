@@ -5,11 +5,19 @@ from pathlib import Path
 
 
 def _open_sops(paths: list):
-    """Open compiled SOPs in Sublime Text (or default editor)."""
+    """Open compiled SOPs in the configured editor (or system default)."""
     if not paths:
         return
+    from sifu.config import load_config
+    config = load_config()
+    editor = config.get("editor")
+
     for path in paths:
-        subprocess.Popen(["open", "-a", "Sublime Text", str(path)])
+        if editor:
+            subprocess.Popen(["open", "-a", editor, str(path)])
+        else:
+            # Use system default for .md files
+            subprocess.Popen(["open", str(path)])
 
 
 def _notify(compiled_count: int):

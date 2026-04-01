@@ -24,6 +24,7 @@ DEFAULT_CONFIG = {
     "automations_dir": str(SIFU_DIR / "automations"),
     "capabilities_dir": str(SIFU_DIR / "capabilities.d"),
     "workflows_dir": str(SIFU_DIR / "output" / "workflows"),
+    "editor": None,  # App name (e.g. "Sublime Text", "VS Code"). None = system default.
 }
 
 

@@ -342,8 +342,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     @objc private func stopAction() {
+        // Stop capture first (writes daemon.state = stopped),
+        // then run "sifu stop" which triggers analysis (patterns + compile + coach).
+        // sifu stop checks state — since we just stopped, we need to run analysis directly.
         stopCapture()
-        runSifu("_analyze")
+        runSifu("compile --today")
     }
     @objc private func cancelAction() {
         // Delete this session's events and screenshots, then stop
