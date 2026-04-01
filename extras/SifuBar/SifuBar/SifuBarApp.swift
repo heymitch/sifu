@@ -50,12 +50,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.cliBridge.checkForCommand()
         }
 
-        // Check permissions and auto-start capture
-        permissionManager.checkAndRequest { [weak self] in
-            DispatchQueue.main.async {
-                self?.startCapture()
-            }
+        // Silently check permissions — start capture if granted, show menu hint if not.
+        // Only show permission dialogs when user explicitly clicks the menu item.
+        if permissionManager.allGranted {
+            startCapture()
         }
+        // If not granted, menu shows the permissions hint — no popup on launch.
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -326,7 +326,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc private func startAction() { startCapture() }
+    @objc private func startAction() {
+        if !permissionManager.allGranted {
+            permissionManager.checkAndRequest { [weak self] in
+                DispatchQueue.main.async {
+                    self?.startCapture()
+                }
+            }
+        } else {
+            startCapture()
+        }
+    }
     @objc private func stopAction() {
         stopCapture()
         // Launch analysis via CLI
