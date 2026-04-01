@@ -238,9 +238,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             menu.addItem(NSMenuItem.separator())
 
-            let stopItem = NSMenuItem(title: "\u{23F9} Stop (+ analyze)", action: #selector(stopAction), keyEquivalent: "")
+            let stopItem = NSMenuItem(title: "\u{23F9} Stop + Analyze", action: #selector(stopAction), keyEquivalent: "")
             stopItem.target = self
             menu.addItem(stopItem)
+
+            let stopOnlyItem = NSMenuItem(title: "\u{23F9} Stop (no analysis)", action: #selector(stopOnlyAction), keyEquivalent: "")
+            stopOnlyItem.target = self
+            menu.addItem(stopOnlyItem)
 
             if isPaused {
                 let resumeItem = NSMenuItem(title: "\u{25B6} Resume", action: #selector(resumeAction), keyEquivalent: "")
@@ -339,8 +343,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     @objc private func stopAction() {
         stopCapture()
-        // Launch analysis via CLI
         runSifuInTerminal("_analyze")
+    }
+    @objc private func stopOnlyAction() {
+        stopCapture()
     }
     @objc private func pauseAction() { pauseCapture() }
     @objc private func resumeAction() { resumeCapture() }
