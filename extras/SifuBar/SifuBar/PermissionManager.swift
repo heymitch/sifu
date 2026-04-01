@@ -5,22 +5,55 @@ final class PermissionManager {
     private var pollTimer: Timer?
 
     var hasAccessibility: Bool {
-        AXIsProcessTrusted()
+        // AXIsProcessTrusted() returns false after binary swaps (dev rebuilds).
+        // Fall back to saved state so the menu stays clean.
+        // The event tap itself will fail gracefully if trust is actually revoked.
+        if AXIsProcessTrusted() { return true }
+        return _savedAccessibility()
+    }
+
+    private func _savedAccessibility() -> Bool {
+        let statusFile = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".sifu")
+            .appendingPathComponent("permissions.json")
+        guard let data = try? Data(contentsOf: statusFile),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let ax = json["accessibility"] as? Bool else {
+            return false
+        }
+        return ax
     }
 
     var hasScreenRecording: Bool {
-        // CGWindowListCreateImage returns nil without Screen Recording permission
+        // CGWindowListCreateImage is unreliable after binary swaps —
+        // macOS caches permission per code signature hash.
+        // Try the live check first, fall back to the saved status file.
         let testImage = CGWindowListCreateImage(
             CGRect(x: 0, y: 0, width: 1, height: 1),
             .optionOnScreenOnly,
             kCGNullWindowID,
             []
         )
-        return testImage != nil
+        if testImage != nil { return true }
+
+        // Fall back to saved permission state (from a previous successful check)
+        return _savedScreenRecording()
     }
 
     var allGranted: Bool {
         hasAccessibility && hasScreenRecording
+    }
+
+    private func _savedScreenRecording() -> Bool {
+        let statusFile = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".sifu")
+            .appendingPathComponent("permissions.json")
+        guard let data = try? Data(contentsOf: statusFile),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let sr = json["screen_recording"] as? Bool else {
+            return false
+        }
+        return sr
     }
 
     /// Run the full permission check flow. Calls `onReady` when both permissions are granted.
