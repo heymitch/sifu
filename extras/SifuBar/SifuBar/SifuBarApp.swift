@@ -26,6 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let loginItemManager = LoginItemManager()
 
     private var isCapturing = false
+    private var workingLayer: String? = nil  // nil = not working, or "compile", "coach", "classify", "patterns"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // LSUIElement=true in Info.plist handles hiding from Dock.
@@ -209,11 +210,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let isPaused = eventTapManager.paused
 
-        // Menu bar title
-        if isCapturing {
-            statusItem.button?.title = isPaused ? "\u{25CE} Sifu" : "\u{25C9} Sifu"
+        // Menu bar title — icon matches active layer
+        if let layer = workingLayer {
+            let icon: String
+            switch layer {
+            case "compile":  icon = "\u{25C8}"  // ◈ Compiler
+            case "coach":    icon = "\u{25C7}"  // ◇ Coach
+            case "classify": icon = "\u{2B21}"  // ⬡ Classifier
+            case "patterns": icon = "\u{25CE}"  // ◎ Pattern Detection
+            default:         icon = "\u{25C8}"  // ◈ default working
+            }
+            statusItem.button?.title = "\(icon) Sifu"
+        } else if isCapturing {
+            statusItem.button?.title = isPaused ? "\u{25CE} Sifu" : "\u{25C9} Sifu"  // ◎ paused / ◉ recording
         } else {
-            statusItem.button?.title = "\u{25C7} Sifu"
+            statusItem.button?.title = "\u{25C7} Sifu"  // ◇ idle
         }
 
         let menu = NSMenu()
@@ -342,11 +353,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     @objc private func stopAction() {
-        // Stop capture first (writes daemon.state = stopped),
-        // then run "sifu stop" which triggers analysis (patterns + compile + coach).
-        // sifu stop checks state — since we just stopped, we need to run analysis directly.
         stopCapture()
-        runSifu("compile --today")
+        runSifuWithLayer("compile --today", layer: "compile")
     }
     @objc private func cancelAction() {
         // Delete this session's events and screenshots, then stop
@@ -363,11 +371,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func resumeAction() { resumeCapture() }
     @objc private func sensitiveAction() { handleSensitive() }
 
-    @objc private func compileSifu() { runSifu("compile") }
-    @objc private func coachSifu() { runSifu("coach --today") }
-    @objc private func patternsSifu() { runSifu("patterns --today") }
+    @objc private func compileSifu() { runSifuWithLayer("compile", layer: "compile") }
+    @objc private func coachSifu() { runSifuWithLayer("coach --today", layer: "coach") }
+    @objc private func patternsSifu() { runSifuWithLayer("patterns --today", layer: "patterns") }
     @objc private func logSifu() { runSifu("log --last 1h") }
     @objc private func configSifu() { runSifu("config") }
+
+    private func runSifuWithLayer(_ subcommand: String, layer: String) {
+        workingLayer = layer
+        updateMenu()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.runSifuSync(subcommand)
+            DispatchQueue.main.async {
+                self?.workingLayer = nil
+                self?.updateMenu()
+            }
+        }
+    }
     @objc private func toggleLoginItem() { loginItemManager.toggle(); updateMenu() }
 
     @objc private func openData() {
@@ -393,7 +413,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Sifu CLI helper
 
+    private func runSifuSync(_ subcommand: String) {
+        // Synchronous version — blocks until sifu finishes. Call from background thread.
+        let proc = _makeSifuProcess(subcommand)
+        guard let proc = proc else { return }
+        proc.waitUntilExit()
+    }
+
     private func runSifu(_ subcommand: String) {
+        // Fire and forget
+        guard let proc = _makeSifuProcess(subcommand) else { return }
+        _ = proc  // process runs detached
+    }
+
+    private func _makeSifuProcess(_ subcommand: String) -> Process? {
         // Find sifu on common paths (pip install -e puts it in user or system bin)
         let searchPaths = [
             "/opt/homebrew/bin/sifu",
@@ -434,5 +467,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         proc.standardError = logHandle ?? FileHandle.nullDevice
 
         try? proc.run()
+        return proc
     }
 }
