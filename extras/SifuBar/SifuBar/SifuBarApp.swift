@@ -210,9 +210,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let isPaused = eventTapManager.paused
 
         // Menu bar title
-        if !permissionManager.allGranted {
-            statusItem.button?.title = "\u{25C7} Sifu (setup needed)"
-        } else if isCapturing {
+        if isCapturing {
             statusItem.button?.title = isPaused ? "\u{25CE} Sifu" : "\u{25C9} Sifu"
         } else {
             statusItem.button?.title = "\u{25C7} Sifu"
@@ -220,16 +218,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let menu = NSMenu()
 
-        if !permissionManager.allGranted {
-            let permItem = NSMenuItem(title: "Grant permissions to start recording", action: #selector(requestPermissions), keyEquivalent: "")
-            permItem.target = self
-            menu.addItem(permItem)
-
-            let restartItem = NSMenuItem(title: "\u{1F504} Restart (after granting permissions)", action: #selector(restartApp), keyEquivalent: "r")
-            restartItem.target = self
-            menu.addItem(restartItem)
-            menu.addItem(NSMenuItem.separator())
-        } else if isCapturing {
+        if isCapturing {
             let events = sessionManager.eventCount
             let sessionId = sessionManager.sessionId ?? "\u{2014}"
 
@@ -275,6 +264,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let startItem = NSMenuItem(title: "\u{25B6} Start Recording", action: #selector(startAction), keyEquivalent: "")
             startItem.target = self
             menu.addItem(startItem)
+
+            if !permissionManager.allGranted {
+                menu.addItem(NSMenuItem.separator())
+                let permItem = NSMenuItem(title: "\u{26A0}\u{FE0F} Permissions needed to record", action: #selector(requestPermissions), keyEquivalent: "")
+                permItem.target = self
+                menu.addItem(permItem)
+
+                let restartItem = NSMenuItem(title: "\u{1F504} Restart (after granting)", action: #selector(restartApp), keyEquivalent: "r")
+                restartItem.target = self
+                menu.addItem(restartItem)
+            }
         }
 
         menu.addItem(NSMenuItem.separator())
