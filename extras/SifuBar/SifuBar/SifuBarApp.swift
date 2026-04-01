@@ -343,7 +343,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     @objc private func stopAction() {
         stopCapture()
-        runSifuInTerminal("_analyze")
+        runSifu("_analyze")
     }
     @objc private func cancelAction() {
         // Delete this session's events and screenshots, then stop
@@ -360,11 +360,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func resumeAction() { resumeCapture() }
     @objc private func sensitiveAction() { handleSensitive() }
 
-    @objc private func compileSifu() { runSifuInTerminal("compile") }
-    @objc private func coachSifu() { runSifuInTerminal("coach --today") }
-    @objc private func patternsSifu() { runSifuInTerminal("patterns --today") }
-    @objc private func logSifu() { runSifuInTerminal("log --last 1h") }
-    @objc private func configSifu() { runSifuInTerminal("config") }
+    @objc private func compileSifu() { runSifu("compile") }
+    @objc private func coachSifu() { runSifu("coach --today") }
+    @objc private func patternsSifu() { runSifu("patterns --today") }
+    @objc private func logSifu() { runSifu("log --last 1h") }
+    @objc private func configSifu() { runSifu("config") }
     @objc private func toggleLoginItem() { loginItemManager.toggle(); updateMenu() }
 
     @objc private func openData() {
@@ -388,13 +388,48 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
-    // MARK: - Terminal helper
+    // MARK: - Sifu CLI helper
 
-    private func runSifuInTerminal(_ subcommand: String) {
-        let script = "tell application \"Terminal\" to do script \"sifu \(subcommand)\""
+    private func runSifu(_ subcommand: String) {
+        // Find sifu on common paths (pip install -e puts it in user or system bin)
+        let searchPaths = [
+            "/opt/homebrew/bin/sifu",
+            "/usr/local/bin/sifu",
+            "/Library/Frameworks/Python.framework/Versions/Current/bin/sifu",
+            FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent(".local/bin/sifu").path,
+            FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("sifu/venv/bin/sifu").path,
+        ]
+
+        var sifuPath: String?
+        for path in searchPaths {
+            if FileManager.default.isExecutableFile(atPath: path) {
+                sifuPath = path
+                break
+            }
+        }
+
+        // Fallback: try PATH via /usr/bin/env
+        let execPath = sifuPath ?? "/usr/bin/env"
+        var args = subcommand.split(separator: " ").map(String.init)
+        if sifuPath == nil {
+            args.insert("sifu", at: 0)
+        }
+
         let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-        proc.arguments = ["-e", script]
+        proc.executableURL = URL(fileURLWithPath: execPath)
+        proc.arguments = args
+        proc.environment = ProcessInfo.processInfo.environment
+
+        // Log output to daemon.log
+        let logPath = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".sifu/daemon.log")
+        let logHandle = try? FileHandle(forWritingTo: logPath)
+        logHandle?.seekToEndOfFile()
+        proc.standardOutput = logHandle ?? FileHandle.nullDevice
+        proc.standardError = logHandle ?? FileHandle.nullDevice
+
         try? proc.run()
     }
 }
