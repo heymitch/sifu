@@ -1,11 +1,12 @@
 # Sifu
 
-Local action logger that turns your workflow into SOPs, coaching feedback, and automation scripts.
+Local action logger that turns your workflow into SOPs, coaching feedback, automation scripts, and optimized workflow specs.
 
 Leave Sifu on for a day. At the end you have:
 - Every workflow documented as a step-by-step SOP
 - Coaching feedback on inefficiencies ("use Cmd+C instead of right-click > Copy")
 - Automation scripts for repeatable patterns
+- Classified workflow specs showing the fastest way to automate each step
 
 ## Requirements
 
