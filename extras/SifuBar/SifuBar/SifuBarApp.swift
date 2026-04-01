@@ -274,10 +274,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let permItem = NSMenuItem(title: "\u{26A0}\u{FE0F} Permissions needed to record", action: #selector(requestPermissions), keyEquivalent: "")
                 permItem.target = self
                 menu.addItem(permItem)
-
-                let restartItem = NSMenuItem(title: "\u{1F504} Restart (after granting)", action: #selector(restartApp), keyEquivalent: "r")
-                restartItem.target = self
-                menu.addItem(restartItem)
             }
         }
 
@@ -312,6 +308,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(openDataItem)
 
         menu.addItem(NSMenuItem.separator())
+
+        let restartItem = NSMenuItem(title: "\u{1F504} Restart", action: #selector(restartApp), keyEquivalent: "r")
+        restartItem.target = self
+        menu.addItem(restartItem)
 
         let quitItem = NSMenuItem(title: "Quit SifuBar", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self

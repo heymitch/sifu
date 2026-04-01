@@ -5,23 +5,11 @@ final class PermissionManager {
     private var pollTimer: Timer?
 
     var hasAccessibility: Bool {
-        // AXIsProcessTrusted() returns false after binary swaps (dev rebuilds).
-        // Fall back to saved state so the menu stays clean.
-        // The event tap itself will fail gracefully if trust is actually revoked.
-        if AXIsProcessTrusted() { return true }
-        return _savedAccessibility()
-    }
-
-    private func _savedAccessibility() -> Bool {
-        let statusFile = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".sifu")
-            .appendingPathComponent("permissions.json")
-        guard let data = try? Data(contentsOf: statusFile),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let ax = json["accessibility"] as? Bool else {
-            return false
-        }
-        return ax
+        // No fallback for Accessibility — AXIsProcessTrusted() must be live.
+        // A false positive here means the event tap silently fails and
+        // keystrokes/shortcuts don't get captured. Better to show "setup needed"
+        // than to run broken.
+        AXIsProcessTrusted()
     }
 
     var hasScreenRecording: Bool {
