@@ -28,7 +28,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var isCapturing = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        // LSUIElement=true in Info.plist handles hiding from Dock.
+        // setActivationPolicy(.accessory) can conflict on Sequoia — skip it.
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         updateMenu()
@@ -223,6 +224,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let permItem = NSMenuItem(title: "Grant permissions to start recording", action: #selector(requestPermissions), keyEquivalent: "")
             permItem.target = self
             menu.addItem(permItem)
+
+            let restartItem = NSMenuItem(title: "\u{1F504} Restart (after granting permissions)", action: #selector(restartApp), keyEquivalent: "r")
+            restartItem.target = self
+            menu.addItem(restartItem)
             menu.addItem(NSMenuItem.separator())
         } else if isCapturing {
             let events = sessionManager.eventCount
@@ -342,6 +347,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let sifuDir = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".sifu")
         NSWorkspace.shared.open(sifuDir)
+    }
+
+    @objc private func restartApp() {
+        // Relaunch self to pick up newly granted permissions
+        let executableURL = Bundle.main.executableURL!
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        task.arguments = ["-a", Bundle.main.bundlePath]
+        try? task.run()
+        NSApp.terminate(nil)
     }
 
     @objc private func quitApp() {
