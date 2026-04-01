@@ -8,8 +8,9 @@ let package = Package(
         .executableTarget(
             name: "SifuBar",
             path: "SifuBar",
-            resources: [
-                .copy("Info.plist"),
+            exclude: ["Info.plist"],
+            swiftSettings: [
+                .swiftLanguageMode(.v5),
             ],
             linkerSettings: [
                 .linkedLibrary("sqlite3"),
