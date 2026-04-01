@@ -1,187 +1,361 @@
 import SwiftUI
+import AppKit
 
 @main
 struct SifuBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        // No main window — menu bar only
         Settings { EmptyView() }
     }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var statusItem: NSStatusItem?
-    var timer: Timer?
+    private var statusItem: NSStatusItem?
+    private var pollTimer: Timer?
+
+    // Core components
+    private let permissionManager = PermissionManager()
+    private let eventStore = EventStore()
+    private lazy var sessionManager = SessionManager(store: eventStore)
+    private lazy var config = SifuConfig.load()
+    private lazy var eventTapManager = EventTapManager(config: config)
+    private lazy var appTracker = AppTracker(config: config)
+    private lazy var screenshotCapture = ScreenshotCapture(config: config)
+    private let cliBridge = CLIBridge()
+    private let loginItemManager = LoginItemManager()
+
+    private var isCapturing = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Hide dock icon — menu bar only app
         NSApp.setActivationPolicy(.accessory)
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         updateMenu()
 
-        // Poll state file every 5 seconds
-        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+        // Enable login item on first launch
+        if config.startAtLogin && !loginItemManager.isEnabled {
+            loginItemManager.enable()
+        }
+
+        // Wire up CLI bridge
+        cliBridge.onCommand = { [weak self] command in
+            self?.handleCLICommand(command)
+        }
+
+        // Start poll timer (menu updates + CLI bridge checks)
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             self?.updateMenu()
+            self?.cliBridge.checkForCommand()
+        }
+
+        // Check permissions and auto-start capture
+        permissionManager.checkAndRequest { [weak self] in
+            DispatchQueue.main.async {
+                self?.startCapture()
+            }
         }
     }
 
-    func updateMenu() {
-        guard let statusItem = statusItem else { return }
+    func applicationWillTerminate(_ notification: Notification) {
+        stopCapture()
+    }
 
-        let state = readState()
-        let isRunning = pidIsAlive(state["pid"] as? Int)
-        let status = state["status"] as? String ?? "stopped"
+    // MARK: - Capture lifecycle
 
-        // Menu bar title
-        if isRunning {
-            if status == "paused" {
-                statusItem.button?.title = "⏸ Sifu"
-            } else {
-                statusItem.button?.title = "🔴 Sifu"
+    private func startCapture() {
+        guard !isCapturing else { return }
+        guard permissionManager.allGranted else {
+            permissionManager.checkAndRequest { [weak self] in
+                DispatchQueue.main.async {
+                    self?.startCapture()
+                }
             }
-        } else {
-            statusItem.button?.title = "⚪ Sifu"
+            return
         }
 
-        // Build dropdown menu
+        sessionManager.startSession()
+
+        // Wire event tap -> store + screenshot
+        eventTapManager.onEvent = { [weak self] captured in
+            guard let self = self else { return }
+            let sessionId = self.sessionManager.sessionId
+
+            let eventId = self.eventStore.insertEvent(
+                timestamp: SessionManager.isoNow(),
+                type: captured.type,
+                app: captured.app,
+                window: captured.window,
+                description: captured.description,
+                element: captured.element,
+                positionX: captured.positionX,
+                positionY: captured.positionY,
+                textContent: captured.textContent,
+                shortcut: captured.shortcut,
+                screenshotPath: nil,
+                sessionId: sessionId
+            )
+            self.sessionManager.incrementEventCount()
+
+            // Delayed screenshot (300ms for UI to update after click)
+            let delay: TimeInterval = (captured.type == "click" || captured.type == "right_click") ? 0.3 : 0.0
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + delay) {
+                if let path = self.screenshotCapture.captureIfNeeded(
+                    app: captured.app,
+                    window: captured.window,
+                    eventType: captured.type
+                ) {
+                    self.eventStore.updateScreenshotPath(eventId: eventId, path: path)
+                }
+            }
+        }
+
+        // Wire app tracker -> store + screenshot + text flush
+        appTracker.onSwitch = { [weak self] eventType, app, window, description in
+            guard let self = self else { return }
+            let sessionId = self.sessionManager.sessionId
+
+            // Flush text buffer on app switch
+            if eventType == "app_switch" {
+                self.eventTapManager.flushText()
+            }
+
+            let eventId = self.eventStore.insertEvent(
+                timestamp: SessionManager.isoNow(),
+                type: eventType,
+                app: app,
+                window: window,
+                description: description,
+                element: nil,
+                positionX: nil,
+                positionY: nil,
+                textContent: nil,
+                shortcut: nil,
+                screenshotPath: nil,
+                sessionId: sessionId
+            )
+            self.sessionManager.incrementEventCount()
+
+            // Screenshot on app switch
+            if eventType == "app_switch" {
+                DispatchQueue.global(qos: .utility).async {
+                    if let path = self.screenshotCapture.captureIfNeeded(
+                        app: app, window: window, eventType: eventType
+                    ) {
+                        self.eventStore.updateScreenshotPath(eventId: eventId, path: path)
+                    }
+                }
+            }
+        }
+
+        let tapStarted = eventTapManager.start()
+        if !tapStarted {
+            print("[SifuBar] WARNING: CGEventTap creation failed — check Accessibility permissions")
+        }
+        appTracker.start()
+        isCapturing = true
+        updateMenu()
+    }
+
+    private func stopCapture() {
+        guard isCapturing else { return }
+        eventTapManager.stop()
+        appTracker.stop()
+        sessionManager.endSession()
+        isCapturing = false
+        updateMenu()
+    }
+
+    private func pauseCapture() {
+        eventTapManager.paused = true
+        appTracker.paused = true
+        sessionManager.writePausedState()
+        updateMenu()
+    }
+
+    private func resumeCapture() {
+        eventTapManager.paused = false
+        appTracker.paused = false
+        sessionManager.writeRecordingState()
+        updateMenu()
+    }
+
+    private func handleSensitive() {
+        pauseCapture()
+        let paths = eventStore.purgeRecent(minutes: config.sensitivePurgeMinutes)
+        for path in paths {
+            try? FileManager.default.removeItem(atPath: path)
+        }
+    }
+
+    // MARK: - CLI bridge
+
+    private func handleCLICommand(_ command: String) {
+        switch command {
+        case "start": startCapture()
+        case "stop": stopCapture()
+        case "pause": pauseCapture()
+        case "resume": resumeCapture()
+        case "sensitive": handleSensitive()
+        default: break
+        }
+    }
+
+    // MARK: - Menu UI
+
+    private func updateMenu() {
+        guard let statusItem = statusItem else { return }
+
+        let isPaused = eventTapManager.paused
+
+        // Menu bar title
+        if !permissionManager.allGranted {
+            statusItem.button?.title = "\u{25C7} Sifu (setup needed)"
+        } else if isCapturing {
+            statusItem.button?.title = isPaused ? "\u{25CE} Sifu" : "\u{25C9} Sifu"
+        } else {
+            statusItem.button?.title = "\u{25C7} Sifu"
+        }
+
         let menu = NSMenu()
 
-        if isRunning {
-            let events = state["events"] as? Int ?? 0
-            let sessionId = state["session_id"] as? String ?? "—"
+        if !permissionManager.allGranted {
+            let permItem = NSMenuItem(title: "Grant permissions to start recording", action: #selector(requestPermissions), keyEquivalent: "")
+            permItem.target = self
+            menu.addItem(permItem)
+            menu.addItem(NSMenuItem.separator())
+        } else if isCapturing {
+            let events = sessionManager.eventCount
+            let sessionId = sessionManager.sessionId ?? "\u{2014}"
 
-            if status == "paused" {
-                menu.addItem(NSMenuItem(title: "Paused — \(events) events", action: nil, keyEquivalent: ""))
+            if isPaused {
+                let h = NSMenuItem(title: "Paused \u{2014} \(events) events", action: nil, keyEquivalent: "")
+                h.isEnabled = false
+                menu.addItem(h)
             } else {
-                menu.addItem(NSMenuItem(title: "Recording — \(events) events", action: nil, keyEquivalent: ""))
+                let h = NSMenuItem(title: "Recording \u{2014} \(events) events", action: nil, keyEquivalent: "")
+                h.isEnabled = false
+                menu.addItem(h)
             }
 
-            let sessionItem = NSMenuItem(title: sessionId, action: nil, keyEquivalent: "")
-            sessionItem.isEnabled = false
-            menu.addItem(sessionItem)
-
-            if let startTime = state["start_time"] as? String {
-                let sinceItem = NSMenuItem(title: "Since \(startTime)", action: nil, keyEquivalent: "")
-                sinceItem.isEnabled = false
-                menu.addItem(sinceItem)
-            }
+            let s = NSMenuItem(title: sessionId, action: nil, keyEquivalent: "")
+            s.isEnabled = false
+            menu.addItem(s)
 
             menu.addItem(NSMenuItem.separator())
 
-            menu.addItem(NSMenuItem(title: "⏹ Stop (+ analyze)", action: #selector(stopSifu), keyEquivalent: ""))
-            if status == "paused" {
-                menu.addItem(NSMenuItem(title: "▶ Resume", action: #selector(resumeSifu), keyEquivalent: ""))
+            let stopItem = NSMenuItem(title: "\u{23F9} Stop (+ analyze)", action: #selector(stopAction), keyEquivalent: "")
+            stopItem.target = self
+            menu.addItem(stopItem)
+
+            if isPaused {
+                let resumeItem = NSMenuItem(title: "\u{25B6} Resume", action: #selector(resumeAction), keyEquivalent: "")
+                resumeItem.target = self
+                menu.addItem(resumeItem)
             } else {
-                menu.addItem(NSMenuItem(title: "⏸ Pause", action: #selector(pauseSifu), keyEquivalent: ""))
+                let pauseItem = NSMenuItem(title: "\u{23F8} Pause", action: #selector(pauseAction), keyEquivalent: "")
+                pauseItem.target = self
+                menu.addItem(pauseItem)
             }
-            menu.addItem(NSMenuItem(title: "🔒 Sensitive (purge 5m)", action: #selector(sensitiveSifu), keyEquivalent: ""))
+
+            let sensitiveItem = NSMenuItem(title: "\u{1F512} Sensitive (purge 5m)", action: #selector(sensitiveAction), keyEquivalent: "")
+            sensitiveItem.target = self
+            menu.addItem(sensitiveItem)
         } else {
-            menu.addItem(NSMenuItem(title: "Not recording", action: nil, keyEquivalent: ""))
+            let h = NSMenuItem(title: "Not recording", action: nil, keyEquivalent: "")
+            h.isEnabled = false
+            menu.addItem(h)
             menu.addItem(NSMenuItem.separator())
-            menu.addItem(NSMenuItem(title: "▶ Start Recording", action: #selector(startSifu), keyEquivalent: ""))
+
+            let startItem = NSMenuItem(title: "\u{25B6} Start Recording", action: #selector(startAction), keyEquivalent: "")
+            startItem.target = self
+            menu.addItem(startItem)
         }
 
         menu.addItem(NSMenuItem.separator())
 
         // Quick actions
-        menu.addItem(NSMenuItem(title: "📋 Compile SOPs", action: #selector(compileSifu), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "🎯 Coach Report", action: #selector(coachSifu), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "📊 Show Patterns", action: #selector(patternsSifu), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "📝 Show Log", action: #selector(logSifu), keyEquivalent: ""))
-
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "⚙️ Config", action: #selector(configSifu), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "📂 Open Data", action: #selector(openData), keyEquivalent: ""))
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit SifuBar", action: #selector(quitApp), keyEquivalent: "q"))
-
-        // Set targets
-        for item in menu.items {
+        for (title, sel) in [
+            ("\u{1F4CB} Compile SOPs", #selector(compileSifu)),
+            ("\u{1F3AF} Coach Report", #selector(coachSifu)),
+            ("\u{1F4CA} Show Patterns", #selector(patternsSifu)),
+            ("\u{1F4DD} Show Log", #selector(logSifu)),
+        ] as [(String, Selector)] {
+            let item = NSMenuItem(title: title, action: sel, keyEquivalent: "")
             item.target = self
+            menu.addItem(item)
         }
+
+        menu.addItem(NSMenuItem.separator())
+
+        // Login item toggle
+        let loginTitle = loginItemManager.isEnabled ? "\u{2705} Start at Login" : "Start at Login"
+        let loginItem = NSMenuItem(title: loginTitle, action: #selector(toggleLoginItem), keyEquivalent: "")
+        loginItem.target = self
+        menu.addItem(loginItem)
+
+        let configItem = NSMenuItem(title: "\u{2699}\u{FE0F} Config", action: #selector(configSifu), keyEquivalent: "")
+        configItem.target = self
+        menu.addItem(configItem)
+
+        let openDataItem = NSMenuItem(title: "\u{1F4C2} Open Data", action: #selector(openData), keyEquivalent: "")
+        openDataItem.target = self
+        menu.addItem(openDataItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let quitItem = NSMenuItem(title: "Quit SifuBar", action: #selector(quitApp), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
 
         statusItem.menu = menu
     }
 
-    // ── State reading ──────────────────────────────────
+    // MARK: - Menu actions
 
-    func readState() -> [String: Any] {
-        let statePath = NSHomeDirectory() + "/.sifu/daemon.state"
-        guard let data = try? Data(contentsOf: URL(fileURLWithPath: statePath)),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        else { return [:] }
-        return json
-    }
-
-    func pidIsAlive(_ pid: Int?) -> Bool {
-        guard let pid = pid, pid > 0 else { return false }
-        return kill(Int32(pid), 0) == 0
-    }
-
-    // Also check PID file directly (state file may not have pid)
-    func isDaemonRunning() -> Bool {
-        let pidPath = NSHomeDirectory() + "/.sifu/daemon.pid"
-        guard let pidStr = try? String(contentsOfFile: pidPath).trimmingCharacters(in: .whitespacesAndNewlines),
-              let pid = Int(pidStr)
-        else { return false }
-        return kill(Int32(pid), 0) == 0
-    }
-
-    // ── Actions ────────────────────────────────────────
-
-    @objc func startSifu() { runSifuInTerminal("start") }
-
-    @objc func stopSifu() { runSifuInTerminal("stop") }
-
-    @objc func pauseSifu() { runSifuSilent("pause") }
-
-    @objc func resumeSifu() { runSifuSilent("resume") }
-
-    @objc func sensitiveSifu() { runSifuSilent("sensitive") }
-
-    @objc func compileSifu() { runSifuInTerminal("compile") }
-
-    @objc func coachSifu() { runSifuInTerminal("coach --today") }
-
-    @objc func patternsSifu() { runSifuInTerminal("patterns --today") }
-
-    @objc func logSifu() { runSifuInTerminal("log --last 1h") }
-
-    @objc func configSifu() { runSifuInTerminal("config") }
-
-    @objc func openData() {
-        NSWorkspace.shared.open(URL(fileURLWithPath: NSHomeDirectory() + "/.sifu"))
-    }
-
-    @objc func quitApp() {
-        NSApp.terminate(nil)
-    }
-
-    // ── Helpers ────────────────────────────────────────
-
-    func runSifuSilent(_ subcommand: String) {
-        DispatchQueue.global().async {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            process.arguments = ["sifu"] + subcommand.split(separator: " ").map(String.init)
-            try? process.run()
-            process.waitUntilExit()
-            DispatchQueue.main.async { self.updateMenu() }
+    @objc private func requestPermissions() {
+        permissionManager.checkAndRequest { [weak self] in
+            DispatchQueue.main.async {
+                self?.startCapture()
+            }
         }
     }
 
-    func runSifuInTerminal(_ subcommand: String) {
-        let script = """
-        tell application "Terminal"
-            activate
-            do script "sifu \(subcommand)"
-        end tell
-        """
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-        process.arguments = ["-e", script]
-        try? process.run()
+    @objc private func startAction() { startCapture() }
+    @objc private func stopAction() {
+        stopCapture()
+        // Launch analysis via CLI
+        runSifuInTerminal("_analyze")
+    }
+    @objc private func pauseAction() { pauseCapture() }
+    @objc private func resumeAction() { resumeCapture() }
+    @objc private func sensitiveAction() { handleSensitive() }
+
+    @objc private func compileSifu() { runSifuInTerminal("compile") }
+    @objc private func coachSifu() { runSifuInTerminal("coach --today") }
+    @objc private func patternsSifu() { runSifuInTerminal("patterns --today") }
+    @objc private func logSifu() { runSifuInTerminal("log --last 1h") }
+    @objc private func configSifu() { runSifuInTerminal("config") }
+    @objc private func toggleLoginItem() { loginItemManager.toggle(); updateMenu() }
+
+    @objc private func openData() {
+        let sifuDir = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".sifu")
+        NSWorkspace.shared.open(sifuDir)
+    }
+
+    @objc private func quitApp() {
+        stopCapture()
+        NSApp.terminate(nil)
+    }
+
+    // MARK: - Terminal helper
+
+    private func runSifuInTerminal(_ subcommand: String) {
+        let script = "tell application \"Terminal\" to do script \"sifu \(subcommand)\""
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        proc.arguments = ["-e", script]
+        try? proc.run()
     }
 }
