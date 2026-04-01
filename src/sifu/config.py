@@ -22,6 +22,8 @@ DEFAULT_CONFIG = {
     "output_dir": str(SIFU_DIR / "output"),
     "sops_dir": str(SIFU_DIR / "output" / "sops"),
     "automations_dir": str(SIFU_DIR / "automations"),
+    "capabilities_dir": str(SIFU_DIR / "capabilities.d"),
+    "workflows_dir": str(SIFU_DIR / "output" / "workflows"),
 }
 
 
