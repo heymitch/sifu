@@ -1,0 +1,12 @@
+name: vercel
+type: cli+api
+description: "Vercel deployment and hosting"
+matches:
+  - command_contains: "vercel"
+  - url_contains: "vercel.com"
+actions:
+  - deploy
+  - get_deployment
+  - get_build_logs
+  - list_deployments
+  - list_projects

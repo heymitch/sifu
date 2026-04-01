@@ -1,0 +1,13 @@
+name: slack
+type: mcp
+description: "Slack messaging and channels"
+matches:
+  - app: "Slack"
+  - url_contains: "slack.com"
+actions:
+  - send_message
+  - read_channel
+  - search_messages
+  - search_channels
+  - create_canvas
+  - read_thread

@@ -1,0 +1,11 @@
+name: gmail
+type: mcp
+description: "Gmail email management"
+matches:
+  - app: "Mail"
+  - url_contains: "mail.google.com"
+actions:
+  - read_message
+  - create_draft
+  - search_messages
+  - list_labels
