@@ -41,98 +41,22 @@ def _get_sops_dir() -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Prompt builder
+# Core compilation — delegates to Claude CLI with file references
 # ---------------------------------------------------------------------------
-
-def _build_prompt(events) -> str:
-    """Build a Claude prompt from a list of raw event rows."""
-    lines = [
-        "You are converting raw action logs into a clear, step-by-step SOP (Standard Operating Procedure).",
-        "Write a polished markdown SOP from these captured user actions.",
-        "Include a descriptive title, time estimate, list of apps used, and numbered steps.",
-        "Each step should describe WHAT the user did and WHY (if inferable).",
-        "Format: markdown with ## headers for sections and ### for steps.",
-        "",
-        "Raw action log:",
-        "---",
-    ]
-    for i, e in enumerate(events, 1):
-        ts = e["timestamp"][11:19] if e["timestamp"] else "?"
-        parts = [f"[{ts}]", e["type"]]
-        if e["app"]:
-            parts.append(f"in {e['app']}")
-        if e["text_content"]:
-            parts.append(f": {e['text_content']}")
-        elif e["shortcut"]:
-            parts.append(f": {e['shortcut']}")
-        elif e["description"]:
-            parts.append(f": {e['description']}")
-        lines.append(f"  {i}. {' '.join(parts)}")
-    lines.append("---")
-    return "\n".join(lines)
-
-
-# ---------------------------------------------------------------------------
-# Content cleanup
-# ---------------------------------------------------------------------------
-
-def _strip_insight_blocks(content: str) -> str:
-    """Remove Claude's ★ Insight decoration blocks from SOP output."""
-    import re
-    # Remove backtick-fenced insight blocks
-    content = re.sub(
-        r'`★ Insight[^`]*`\n.*?\n`─+`\n*',
-        '', content, flags=re.DOTALL,
-    )
-    # Strip leading whitespace/dashes left behind
-    content = content.lstrip('\n -')
-    return content
-
-
-# ---------------------------------------------------------------------------
-# Screenshot reference helper
-# ---------------------------------------------------------------------------
-
-def _add_screenshot_refs(sop_content: str, events: list) -> str:
-    """Append a Screenshots section to the SOP for any events that have captures."""
-    screenshots = [
-        (i, e["screenshot_path"])
-        for i, e in enumerate(events)
-        if e["screenshot_path"]
-    ]
-    if not screenshots:
-        return sop_content
-
-    lines = [sop_content, "", "---", "", "## Screenshots", ""]
-    for seq, (idx, path) in enumerate(screenshots, 1):
-        lines.append(f"### Capture {seq}")
-        lines.append(f"![capture-{seq}]({path})")
-        lines.append("")
-
-    return "\n".join(lines)
-
-
-# ---------------------------------------------------------------------------
-# Core compilation
-# ---------------------------------------------------------------------------
-
-# Maximum events per chunk sent to Claude CLI.
-# 50 events produces ~2-3KB of prompt text — well within CLI limits.
-# Larger workflows get chunked and stitched.
-MAX_EVENTS_PER_CHUNK = 50
 
 
 def compile_single(workflow_id: str) -> Path:
-    """Compile a single workflow segment into an SOP markdown file.
+    """Compile a workflow into an SOP by delegating to Claude CLI.
 
-    Large workflows (>MAX_EVENTS_PER_CHUNK) are chunked: each chunk is
-    compiled independently, then a final pass stitches them into one SOP.
+    Instead of piping events as text, we tell Claude where the DB is
+    and let it query, read screenshots, and write the SOP itself.
+    No size limits, no chunking, no stitching.
 
     Returns the path of the written file.
     Raises ValueError if no events exist for the workflow_id.
-    Raises RuntimeError if all Claude CLI calls fail.
+    Raises RuntimeError if the Claude CLI call fails.
     """
-    from sifu.storage.db import get_connection, get_events_by_workflow
+    from sifu.storage.db import get_connection, get_events_by_workflow, DB_PATH
 
     conn = get_connection()
     events = get_events_by_workflow(conn, workflow_id)
@@ -141,122 +65,59 @@ def compile_single(workflow_id: str) -> Path:
     if not events:
         raise ValueError(f"No events found for workflow {workflow_id}")
 
-    if len(events) <= MAX_EVENTS_PER_CHUNK:
-        sop_content = _compile_events(events)
-    else:
-        sop_content = _compile_chunked(events)
-
-    sop_content = _strip_insight_blocks(sop_content)
-    sop_content = _add_screenshot_refs(sop_content, events)
-
     sops_dir = _get_sops_dir()
     sops_dir.mkdir(parents=True, exist_ok=True)
     output_path = sops_dir / f"{workflow_id}.md"
-    output_path.write_text(sop_content, encoding="utf-8")
 
-    return output_path
+    screenshots_dir = Path.home() / ".sifu" / "screenshots"
+    event_count = len(events)
 
+    prompt = f"""Compile workflow "{workflow_id}" into a polished SOP.
 
-def _compile_events(events) -> str:
-    """Compile a list of events into SOP text via Claude CLI."""
-    prompt = _build_prompt(events)
+DATABASE: {DB_PATH}
+Query: SELECT * FROM events WHERE workflow_id = '{workflow_id}' ORDER BY timestamp ASC
+This workflow has {event_count} events.
+
+SCREENSHOTS: {screenshots_dir}
+Events with screenshot_path have captures you can reference.
+
+OUTPUT: Write the SOP to {output_path}
+
+INSTRUCTIONS:
+1. Read all events for this workflow from the SQLite database
+2. Write a polished markdown SOP with:
+   - Descriptive title
+   - Time estimate (from first to last event timestamp)
+   - Apps used
+   - Numbered steps describing WHAT the user did and WHY (if inferable)
+   - Group related actions into logical phases if the workflow is long
+3. Append a Screenshots section at the bottom referencing any screenshot_path values
+   Format: ![capture-N](screenshot_path)
+4. Write the final SOP to the output path above
+5. Do NOT include insight blocks, commentary, or meta-discussion — just the SOP
+6. Print only the word DONE when finished"""
 
     result = subprocess.run(
-        ["claude", "-p", "--model", "sonnet"],
+        ["claude", "-p", "--model", "sonnet", "--allowedTools", "Bash,Read,Write,Grep"],
         input=prompt,
         capture_output=True,
         text=True,
-        timeout=300,
+        timeout=600,
     )
 
     if result.returncode != 0:
         raise RuntimeError(f"Claude CLI failed: {result.stderr.strip()}")
 
-    return result.stdout.strip()
+    # Verify the file was written
+    if not output_path.exists():
+        # Fallback: Claude might have printed the SOP to stdout instead of writing it
+        content = result.stdout.strip()
+        if content and content != "DONE" and len(content) > 50:
+            output_path.write_text(content, encoding="utf-8")
+        else:
+            raise RuntimeError(f"Claude CLI did not write output to {output_path}")
 
-
-def _compile_chunked(events) -> str:
-    """Chunk a large event list, compile each chunk, then stitch into one SOP."""
-    import click
-
-    chunks = _split_at_boundaries(events, MAX_EVENTS_PER_CHUNK)
-    click.echo(f"    Large workflow ({len(events)} events) — splitting into {len(chunks)} chunks")
-
-    chunk_sops = []
-    for i, chunk in enumerate(chunks):
-        click.echo(f"    Compiling chunk {i + 1}/{len(chunks)} ({len(chunk)} events)...")
-        try:
-            sop = _compile_events(chunk)
-            chunk_sops.append(sop)
-        except RuntimeError as exc:
-            click.echo(f"    Chunk {i + 1} failed: {exc}")
-
-    if not chunk_sops:
-        raise RuntimeError("All chunks failed to compile")
-
-    if len(chunk_sops) == 1:
-        return chunk_sops[0]
-
-    # Stitch: ask Claude to merge the chunk SOPs into one cohesive SOP
-    stitch_prompt = (
-        "Merge these SOP sections into one cohesive SOP document. "
-        "They are sequential parts of the same workflow, compiled in chunks. "
-        "Remove duplicate headers, unify the step numbering, write one title, "
-        "one metadata table, and continuous steps. Keep all details.\n\n"
-    )
-    for i, sop in enumerate(chunk_sops):
-        stitch_prompt += f"--- PART {i + 1} ---\n{sop}\n\n"
-
-    click.echo(f"    Stitching {len(chunk_sops)} chunks into final SOP...")
-    result = subprocess.run(
-        ["claude", "-p", "--model", "sonnet"],
-        input=stitch_prompt,
-        capture_output=True,
-        text=True,
-        timeout=300,
-    )
-
-    if result.returncode != 0:
-        # Fallback: just concatenate with part headers
-        click.echo("    Stitch failed — concatenating parts")
-        return "\n\n---\n\n".join(
-            f"## Part {i + 1}\n\n{sop}" for i, sop in enumerate(chunk_sops)
-        )
-
-    return result.stdout.strip()
-
-
-def _split_at_boundaries(events, max_size: int) -> list[list]:
-    """Split events into chunks, preferring app_switch boundaries.
-
-    Tries to split at app_switch events near the max_size boundary
-    so chunks align with natural workflow transitions.
-    """
-    if len(events) <= max_size:
-        return [list(events)]
-
-    chunks = []
-    start = 0
-
-    while start < len(events):
-        end = min(start + max_size, len(events))
-
-        if end < len(events):
-            # Look for an app_switch near the boundary to split cleanly
-            best_split = end
-            for j in range(end, max(start + max_size // 2, start), -1):
-                try:
-                    if events[j]["type"] == "app_switch":
-                        best_split = j
-                        break
-                except (KeyError, IndexError):
-                    continue
-            end = best_split
-
-        chunks.append(list(events[start:end]))
-        start = end
-
-    return chunks
+    return output_path
 
 
 # ---------------------------------------------------------------------------
