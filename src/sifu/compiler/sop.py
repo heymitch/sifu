@@ -116,12 +116,21 @@ def _add_screenshot_refs(sop_content: str, events: list) -> str:
 # Core compilation
 # ---------------------------------------------------------------------------
 
+# Maximum events per chunk sent to Claude CLI.
+# 50 events produces ~2-3KB of prompt text — well within CLI limits.
+# Larger workflows get chunked and stitched.
+MAX_EVENTS_PER_CHUNK = 50
+
+
 def compile_single(workflow_id: str) -> Path:
     """Compile a single workflow segment into an SOP markdown file.
 
+    Large workflows (>MAX_EVENTS_PER_CHUNK) are chunked: each chunk is
+    compiled independently, then a final pass stitches them into one SOP.
+
     Returns the path of the written file.
     Raises ValueError if no events exist for the workflow_id.
-    Raises RuntimeError if the Claude CLI call fails.
+    Raises RuntimeError if all Claude CLI calls fail.
     """
     from sifu.storage.db import get_connection, get_events_by_workflow
 
@@ -132,20 +141,11 @@ def compile_single(workflow_id: str) -> Path:
     if not events:
         raise ValueError(f"No events found for workflow {workflow_id}")
 
-    prompt = _build_prompt(events)
+    if len(events) <= MAX_EVENTS_PER_CHUNK:
+        sop_content = _compile_events(events)
+    else:
+        sop_content = _compile_chunked(events)
 
-    result = subprocess.run(
-        ["claude", "-p"],
-        input=prompt,
-        capture_output=True,
-        text=True,
-        timeout=120,
-    )
-
-    if result.returncode != 0:
-        raise RuntimeError(f"Claude CLI failed: {result.stderr.strip()}")
-
-    sop_content = result.stdout.strip()
     sop_content = _strip_insight_blocks(sop_content)
     sop_content = _add_screenshot_refs(sop_content, events)
 
@@ -155,6 +155,108 @@ def compile_single(workflow_id: str) -> Path:
     output_path.write_text(sop_content, encoding="utf-8")
 
     return output_path
+
+
+def _compile_events(events) -> str:
+    """Compile a list of events into SOP text via Claude CLI."""
+    prompt = _build_prompt(events)
+
+    result = subprocess.run(
+        ["claude", "-p", "--model", "sonnet"],
+        input=prompt,
+        capture_output=True,
+        text=True,
+        timeout=300,
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(f"Claude CLI failed: {result.stderr.strip()}")
+
+    return result.stdout.strip()
+
+
+def _compile_chunked(events) -> str:
+    """Chunk a large event list, compile each chunk, then stitch into one SOP."""
+    import click
+
+    chunks = _split_at_boundaries(events, MAX_EVENTS_PER_CHUNK)
+    click.echo(f"    Large workflow ({len(events)} events) — splitting into {len(chunks)} chunks")
+
+    chunk_sops = []
+    for i, chunk in enumerate(chunks):
+        click.echo(f"    Compiling chunk {i + 1}/{len(chunks)} ({len(chunk)} events)...")
+        try:
+            sop = _compile_events(chunk)
+            chunk_sops.append(sop)
+        except RuntimeError as exc:
+            click.echo(f"    Chunk {i + 1} failed: {exc}")
+
+    if not chunk_sops:
+        raise RuntimeError("All chunks failed to compile")
+
+    if len(chunk_sops) == 1:
+        return chunk_sops[0]
+
+    # Stitch: ask Claude to merge the chunk SOPs into one cohesive SOP
+    stitch_prompt = (
+        "Merge these SOP sections into one cohesive SOP document. "
+        "They are sequential parts of the same workflow, compiled in chunks. "
+        "Remove duplicate headers, unify the step numbering, write one title, "
+        "one metadata table, and continuous steps. Keep all details.\n\n"
+    )
+    for i, sop in enumerate(chunk_sops):
+        stitch_prompt += f"--- PART {i + 1} ---\n{sop}\n\n"
+
+    click.echo(f"    Stitching {len(chunk_sops)} chunks into final SOP...")
+    result = subprocess.run(
+        ["claude", "-p", "--model", "sonnet"],
+        input=stitch_prompt,
+        capture_output=True,
+        text=True,
+        timeout=300,
+    )
+
+    if result.returncode != 0:
+        # Fallback: just concatenate with part headers
+        click.echo("    Stitch failed — concatenating parts")
+        return "\n\n---\n\n".join(
+            f"## Part {i + 1}\n\n{sop}" for i, sop in enumerate(chunk_sops)
+        )
+
+    return result.stdout.strip()
+
+
+def _split_at_boundaries(events, max_size: int) -> list[list]:
+    """Split events into chunks, preferring app_switch boundaries.
+
+    Tries to split at app_switch events near the max_size boundary
+    so chunks align with natural workflow transitions.
+    """
+    if len(events) <= max_size:
+        return [list(events)]
+
+    chunks = []
+    start = 0
+
+    while start < len(events):
+        end = min(start + max_size, len(events))
+
+        if end < len(events):
+            # Look for an app_switch near the boundary to split cleanly
+            best_split = end
+            for j in range(end, max(start + max_size // 2, start), -1):
+                try:
+                    if events[j]["type"] == "app_switch":
+                        best_split = j
+                        break
+                except (KeyError, IndexError):
+                    continue
+            end = best_split
+
+        chunks.append(list(events[start:end]))
+        start = end
+
+    return chunks
 
 
 # ---------------------------------------------------------------------------

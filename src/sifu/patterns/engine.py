@@ -17,6 +17,7 @@ PATTERNS_DIR = Path.home() / ".sifu" / "output" / "patterns"
 
 APP_SWITCH_GAP = 30   # seconds: app switch + gap > this → new segment
 IDLE_GAP = 300        # seconds: gap >= this → session boundary
+MAX_SEGMENT_SIZE = 80 # events: segments larger than this get split at app_switch boundaries
 
 
 # ── Public API ───────────────────────────────────────────────────────────────
@@ -156,9 +157,17 @@ def segment_workflows(events: list) -> list[dict]:
 
     flush(current_segment)
 
-    _detect_repeated_sequences(segments)
+    # Split oversized segments at app_switch boundaries
+    split_segments: list[dict] = []
+    for seg in segments:
+        if seg["event_count"] <= MAX_SEGMENT_SIZE:
+            split_segments.append(seg)
+        else:
+            split_segments.extend(_split_large_segment(seg, events, _counter))
 
-    return segments
+    _detect_repeated_sequences(split_segments)
+
+    return split_segments
 
 
 # ── Internal helpers ─────────────────────────────────────────────────────────
@@ -234,6 +243,49 @@ def _make_segment(events: list, counter: int) -> dict:
         "pattern_count": 0,
         "automation_candidate": False,
     }
+
+
+def _split_large_segment(seg: dict, all_events: list, counter: list) -> list[dict]:
+    """Split an oversized segment into smaller ones at app_switch events.
+
+    Falls back to fixed-size splits if no app_switch boundaries exist.
+    """
+    from sifu.storage.db import get_connection, get_events_by_workflow
+
+    conn = get_connection()
+    events = get_events_by_workflow(conn, seg["workflow_id"])
+    conn.close()
+
+    if not events:
+        return [seg]
+
+    # Find app_switch positions to split at
+    sub_segments: list[list] = []
+    current: list = []
+
+    for i, event in enumerate(events):
+        current.append(event)
+        if len(current) >= MAX_SEGMENT_SIZE:
+            # Look backward for nearest app_switch to split cleanly
+            split_at = len(current)
+            for j in range(len(current) - 1, max(len(current) - 20, 0), -1):
+                if _get(current[j], "type") == "app_switch":
+                    split_at = j
+                    break
+            sub_segments.append(current[:split_at])
+            current = current[split_at:]
+
+    if current:
+        sub_segments.append(current)
+
+    # Create new segment dicts for each sub-segment
+    result = []
+    for sub_events in sub_segments:
+        if sub_events:
+            counter[0] += 1
+            result.append(_make_segment(sub_events, counter[0]))
+
+    return result
 
 
 def _detect_repeated_sequences(segments: list[dict]) -> None:
