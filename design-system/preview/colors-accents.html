@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8">
+<title>Colors — Accents & surfaces</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; background: var(--bg); }
+  body { padding: 20px 24px; }
+  .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .sw { display: flex; flex-direction: column; gap: 6px; }
+  .chip { height: 64px; border: 1px solid var(--rule); position: relative; }
+  .name { font-family: var(--font-sans); font-size: 13px; font-weight: 500; color: var(--fg-1); }
+  .hex { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); letter-spacing: 0.04em; }
+  .role { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .eb { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+  .stamp-mini { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; font-size: 10px; letter-spacing: 0.2em; color: #C8202F; border: 1.5px solid #C8202F; margin: 8px; }
+</style>
+<div class="eb">Color · Accents & surfaces</div>
+<div class="row">
+  <div class="sw">
+    <div class="chip" style="background:#F2F0EB"><div class="stamp-mini">CLASSIFIED</div></div>
+    <div class="name">Stamp red</div><div class="hex">#C8202F</div><div class="role">&lt;2% of comp</div>
+  </div>
+  <div class="sw"><div class="chip" style="background:#F7F5F1"></div><div class="name">Bone soft</div><div class="hex">#F7F5F1</div><div class="role">card on bone</div></div>
+  <div class="sw"><div class="chip" style="background:#ECEAE3"></div><div class="name">Bone deep</div><div class="hex">#ECEAE3</div><div class="role">nested surface</div></div>
+  <div class="sw"><div class="chip" style="background:#FFFFFF"></div><div class="name">Pure white</div><div class="hex">#FFFFFF</div><div class="role">reserved</div></div>
+</div>

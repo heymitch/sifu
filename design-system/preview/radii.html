@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8">
+<title>Radii & elevation</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; background: var(--bg); }
+  body { padding: 20px 24px; }
+  .eb { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .item { display: flex; flex-direction: column; gap: 8px; }
+  .box { height: 64px; background: var(--bg-deep); border: 1px solid var(--rule); }
+  .name { font-family: var(--font-mono); font-size: 11px; color: var(--fg-1); }
+  .desc { font-family: var(--font-sans); font-weight: 300; font-size: 11px; color: var(--fg-2); }
+  .pill { background: var(--bg-deep); border: 1px solid var(--rule); height: 32px; border-radius: 999px; display:flex; align-items:center; justify-content:center; font-family: var(--font-mono); font-size: 10px; color: var(--fg-2); letter-spacing: 0.1em; text-transform: uppercase;}
+</style>
+<div class="eb">Radii · sharp by default</div>
+<div class="grid">
+  <div class="item"><div class="box" style="border-radius:0"></div><div class="name">--r-0 · 0px</div><div class="desc">Default. Paper has corners.</div></div>
+  <div class="item"><div class="box" style="border-radius:2px"></div><div class="name">--r-1 · 2px</div><div class="desc">Inputs.</div></div>
+  <div class="item"><div class="box" style="border-radius:4px"></div><div class="name">--r-2 · 4px</div><div class="desc">Cards, max.</div></div>
+  <div class="item"><div class="pill">CLASSIFIED</div><div class="name">--r-pill</div><div class="desc">Status pills only.</div></div>
+</div>

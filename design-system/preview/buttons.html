@@ -1,0 +1,39 @@
+<!doctype html><meta charset="utf-8">
+<title>Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; background: var(--bg); }
+  body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .eb { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); letter-spacing: 0.12em; text-transform: uppercase; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  button {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 120ms cubic-bezier(.4,0,.2,1), background 120ms;
+    letter-spacing: -0.005em;
+  }
+  /* All matte, all filled — no outline buttons */
+  .b-primary  { background: #1F1F1F; color: #F2F0EB; border-color: #1F1F1F; }
+  .b-primary:hover  { background: #000; }
+
+  .b-indigo   { background: #2D4A87; color: #F2F0EB; border-color: #2D4A87; }
+  .b-indigo:hover   { background: #1F3766; }
+
+  .b-stamp    { background: #C8202F; color: #F2F0EB; border-color: #C8202F; }
+  .b-stamp:hover    { background: #A81824; }
+
+  .b-disabled { background: #1F1F1F; color: #F2F0EB; border-color: #1F1F1F; opacity: 0.4; cursor: not-allowed; }
+</style>
+<div class="eb">Buttons · matte fills only</div>
+<div class="row">
+  <button class="b-primary">Start watching</button>
+  <button class="b-indigo">Read the case</button>
+  <button class="b-stamp">View report</button>
+  <button class="b-disabled" disabled>Disabled</button>
+</div>
+<div class="eb" style="margin-top:4px">Sentence case · 14 / 500 · sharp 2px radius · no outline, no shadow</div>

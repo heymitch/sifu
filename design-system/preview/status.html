@@ -1,0 +1,30 @@
+<!doctype html><meta charset="utf-8">
+<title>Status pills & stamps</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; background: var(--bg); }
+  body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .eb { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); letter-spacing: 0.12em; text-transform: uppercase; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .pill { display:inline-flex; align-items:center; gap:6px; font-family: var(--font-mono); font-size: 11px; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid; }
+  .p-watching { color: #2D4A87; border-color: #2D4A87; }
+  .p-classified { color: #1F1F1F; border-color: #1F1F1F; }
+  .p-draft { color: #5A5752; border-color: #C9C7C2; }
+  .p-paused { color: #5A5752; border-color: #C9C7C2; background: var(--bg-deep); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .stamp { display:inline-flex; align-items:center; font-family: var(--font-mono); font-weight: 700; font-size: 11px; letter-spacing: 0.2em; color: #C8202F; border: 1.5px solid #C8202F; padding: 4px 10px; }
+  .seal { display:inline-flex; align-items:center; gap:8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #2D4A87; }
+  .seal-mark { width: 18px; height: 18px; border: 1.4px solid #2D4A87; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; font-size: 11px; }
+</style>
+<div class="eb">Status pills</div>
+<div class="row">
+  <span class="pill p-watching"><span class="dot"></span>Watching</span>
+  <span class="pill p-classified"><span class="dot"></span>Classified</span>
+  <span class="pill p-draft">Draft</span>
+  <span class="pill p-paused">Paused</span>
+</div>
+<div class="eb" style="margin-top:6px">Stamp & seal</div>
+<div class="row">
+  <span class="stamp">CLASSIFIED</span>
+  <span class="seal"><span class="seal-mark">師</span>Verified by Sifu</span>
+</div>

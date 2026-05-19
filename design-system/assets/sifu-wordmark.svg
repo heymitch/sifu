@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 64" width="200" height="64" role="img" aria-label="Sifu">
+  
+  <text x="0" y="44" font-family="&#39;IBM Plex Sans&#39;, system-ui, sans-serif" font-size="44" font-weight="500" letter-spacing="-1.2" fill="#1F1F1F">Sifu</text>
+  
+  <circle cx="98" cy="40" r="3.2" fill="#2D4A87"></circle>
+</svg>

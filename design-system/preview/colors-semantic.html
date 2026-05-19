@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8">
+<title>Colors — Semantic tokens</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; background: var(--bg); }
+  body { padding: 20px 24px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 6px 0; border-bottom: 1px solid var(--rule-soft); vertical-align: middle; }
+  .tok { font-family: var(--font-mono); font-size: 12px; color: var(--fg-1); }
+  .ref { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); }
+  .role { font-family: var(--font-sans); font-weight: 300; font-size: 13px; color: var(--fg-2); }
+  .chip { display: inline-block; width: 16px; height: 16px; border: 1px solid var(--rule); vertical-align: middle; margin-right: 8px; }
+  .eb { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+</style>
+<div class="eb">Color · Semantic tokens</div>
+<table>
+  <tr><td><span class="chip" style="background:#F2F0EB"></span><span class="tok">--bg</span></td><td class="ref">→ bone</td><td class="role">page background</td></tr>
+  <tr><td><span class="chip" style="background:#1F1F1F"></span><span class="tok">--fg-1</span></td><td class="ref">→ charcoal</td><td class="role">primary text</td></tr>
+  <tr><td><span class="chip" style="background:#5A5752"></span><span class="tok">--fg-2</span></td><td class="ref">→ warm-grey</td><td class="role">captions, secondary</td></tr>
+  <tr><td><span class="chip" style="background:#C9C7C2"></span><span class="tok">--rule</span></td><td class="ref">→ pale-grey</td><td class="role">hairline divider</td></tr>
+  <tr><td><span class="chip" style="background:#2D4A87"></span><span class="tok">--accent</span></td><td class="ref">→ indigo</td><td class="role">links, seal, focus</td></tr>
+  <tr><td><span class="chip" style="background:#C8202F"></span><span class="tok">--stamp</span></td><td class="ref">→ stamp-red</td><td class="role">verified, &lt;2%</td></tr>
+</table>

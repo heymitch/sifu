@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80" role="img" aria-label="Sifu seal">
+  
+  <circle cx="40" cy="40" r="36" fill="none" stroke="#2D4A87" stroke-width="1.6"></circle>
+  <circle cx="40" cy="40" r="32" fill="none" stroke="#2D4A87" stroke-width="0.8"></circle>
+  
+  <text x="40" y="54" text-anchor="middle" font-family="&#39;IBM Plex Sans&#39;, &#39;Hiragino Sans&#39;, &#39;Yu Gothic&#39;, system-ui, sans-serif" font-size="36" font-weight="500" fill="#2D4A87">師</text>
+</svg>

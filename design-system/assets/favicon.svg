@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Sifu">
+  <rect width="32" height="32" fill="#F2F0EB"></rect>
+  <circle cx="16" cy="16" r="13" fill="none" stroke="#2D4A87" stroke-width="1.4"></circle>
+  <text x="16" y="22" text-anchor="middle" font-family="&#39;IBM Plex Sans&#39;, &#39;Hiragino Sans&#39;, system-ui, sans-serif" font-size="16" font-weight="500" fill="#2D4A87">師</text>
+</svg>

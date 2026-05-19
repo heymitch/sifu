@@ -1,0 +1,390 @@
+/* Marketing site styles — Sifu */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-weight: 300;
+}
+
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+
+/* ---------- Header ---------- */
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  padding: 28px 48px;
+  border-bottom: 1px solid var(--rule);
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.brand { display: inline-flex; align-items: baseline; gap: 0; text-decoration: none; position: relative; }
+.brand-name {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--fg-1);
+  letter-spacing: -0.02em;
+}
+.brand-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+  margin-left: 3px; align-self: flex-end; margin-bottom: 4px;
+}
+.site-nav { display: flex; gap: 28px; flex: 1; }
+.site-nav a {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--fg-1);
+  text-decoration: none;
+  transition: color 120ms;
+}
+.site-nav a:hover { color: var(--accent); }
+.mono-link {
+  font-family: var(--font-mono) !important;
+  font-size: 12px !important;
+  letter-spacing: 0.04em;
+  color: var(--fg-2) !important;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  transition: background 120ms, color 120ms;
+  letter-spacing: -0.005em;
+}
+/* Matte fills only — no outline, no underlined "tertiary" buttons. */
+.btn-primary {
+  background: var(--fg-1);          /* charcoal */
+  color: var(--bg);
+  border-color: var(--fg-1);
+}
+.btn-primary:hover { background: #000; }
+
+.btn-secondary {
+  background: var(--accent);        /* indigo */
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.btn-secondary:hover { background: var(--link-hover); }
+
+.btn-tertiary {
+  background: var(--stamp);         /* stamp red — used sparingly */
+  color: var(--bg);
+  border-color: var(--stamp);
+}
+.btn-tertiary:hover { background: #A81824; }
+
+/* ---------- Hero ---------- */
+.hero {
+  padding: 128px 48px 96px;
+  max-width: 1080px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--rule);
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+  display: inline-block;
+}
+.hero-title {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 84px;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  color: var(--fg-1);
+  margin: 0 0 32px;
+  max-width: 14ch;
+}
+.hero-sub {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 20px;
+  line-height: 1.55;
+  color: var(--fg-2);
+  max-width: 52ch;
+  margin: 0 0 48px;
+}
+.hero-actions { display: flex; gap: 24px; align-items: center; margin-bottom: 64px; }
+.hero-meta {
+  display: flex; gap: 16px; align-items: center;
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--fg-2); letter-spacing: 0.04em;
+}
+.hero-meta b { color: var(--fg-1); font-weight: 500; }
+.hero-meta .dot { width: 3px; height: 3px; background: var(--fg-3); border-radius: 50%; }
+
+/* ---------- Section title ---------- */
+.section-title {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 44px;
+  letter-spacing: -0.02em;
+  margin: 0 0 64px;
+  color: var(--fg-1);
+}
+
+/* ---------- How ---------- */
+.how { padding: 96px 48px; max-width: 1080px; margin: 0 auto; border-bottom: 1px solid var(--rule); }
+.how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid var(--rule); }
+.how-step { padding: 32px 32px 32px 0; border-right: 1px solid var(--rule-soft); }
+.how-step:last-child { border-right: none; }
+.how-step:not(:first-child) { padding-left: 32px; }
+.how-num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-3);
+  letter-spacing: 0.12em;
+  margin-bottom: 24px;
+}
+.how-verb {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 28px;
+  letter-spacing: -0.015em;
+  margin: 0 0 12px;
+  color: var(--fg-1);
+}
+.how-body {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--fg-2);
+  margin: 0;
+  max-width: 32ch;
+}
+
+/* ---------- Sample ---------- */
+.sample {
+  padding: 96px 48px;
+  max-width: 1080px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 64px;
+  border-bottom: 1px solid var(--rule);
+  align-items: start;
+}
+.sample-side .section-title { font-size: 36px; margin-bottom: 24px; }
+.prose { font-size: 16px; color: var(--fg-2); max-width: 38ch; margin: 0 0 32px; line-height: 1.6; }
+
+.report-mini {
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  padding: 32px;
+}
+.report-mini-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.report-mini h3 {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -0.015em;
+  margin: 0 0 8px;
+  color: var(--fg-1);
+}
+.report-lead { font-size: 14px; color: var(--fg-2); margin: 0; }
+.report-mini hr { border: 0; border-top: 1px solid var(--rule-soft); margin: 20px 0; }
+.report-steps { list-style: none; padding: 0; margin: 0; }
+.report-steps li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 14px;
+  color: var(--fg-1);
+  line-height: 1.5;
+}
+.step-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-3);
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.report-mini code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--bg-deep);
+  padding: 1px 6px;
+  border-radius: 1px;
+  color: var(--fg-1);
+}
+.report-meta {
+  display: flex;
+  gap: 24px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-2);
+}
+.report-meta b { color: var(--fg-1); font-weight: 500; }
+
+.stamp-mini {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--stamp);
+  border: 1.5px solid var(--stamp);
+  padding: 3px 8px;
+}
+
+/* ---------- Cases ---------- */
+.cases { padding: 96px 48px; max-width: 1080px; margin: 0 auto; border-bottom: 1px solid var(--rule); }
+.case-list { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--rule); }
+.case-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 120px 160px 24px;
+  gap: 24px;
+  align-items: center;
+  padding: 20px 8px;
+  border-bottom: 1px solid var(--rule-soft);
+  transition: background 120ms;
+}
+.case-row:hover { background: rgba(31,31,31,0.03); }
+.case-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.case-title {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 17px;
+  color: var(--fg-1);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+.case-row:hover .case-title { color: var(--accent); }
+.case-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.case-obs {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-2);
+}
+.case-obs b { color: var(--fg-1); font-weight: 500; }
+.case-arrow {
+  font-family: var(--font-mono);
+  color: var(--fg-3);
+  text-align: right;
+}
+
+/* ---------- Pricing ---------- */
+.pricing { padding: 96px 48px; max-width: 1080px; margin: 0 auto; border-bottom: 1px solid var(--rule); }
+.plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--rule); }
+.plan { padding: 40px; border-right: 1px solid var(--rule); }
+.plan:last-child { border-right: none; }
+.plan-feature { background: var(--bg-deep); }
+.plan-head { margin-bottom: 24px; }
+.plan-head h3 {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 32px;
+  letter-spacing: -0.015em;
+  margin: 12px 0 0;
+}
+.seal-eb { display: inline-flex !important; align-items: center; gap: 8px; color: var(--accent) !important; }
+.seal-mark {
+  width: 18px; height: 18px;
+  border: 1.4px solid var(--accent);
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; line-height: 1;
+  font-family: 'IBM Plex Sans', 'Hiragino Sans', sans-serif;
+  font-weight: 500;
+}
+.plan-price { display: flex; align-items: baseline; gap: 6px; margin-bottom: 32px; }
+.plan-price .num {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 48px;
+  letter-spacing: -0.025em;
+  color: var(--fg-1);
+}
+.plan-price .per {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--fg-2);
+}
+.plan-list {
+  list-style: none; padding: 0; margin: 0 0 32px;
+  border-top: 1px solid var(--rule-soft);
+}
+.plan-list li {
+  font-size: 14px;
+  color: var(--fg-1);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.plan-list li::before { content: '·  '; color: var(--fg-3); font-family: var(--font-mono); }
+
+/* ---------- Footer ---------- */
+.site-footer {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 64px 48px 32px;
+}
+.footer-top { display: grid; grid-template-columns: 1fr 2fr; gap: 64px; padding-bottom: 48px; border-bottom: 1px solid var(--rule); }
+.footer-brand .brand-name { font-size: 28px; }
+.footer-brand .brand-dot { width: 6px; height: 6px; }
+.footer-tag { font-size: 14px; color: var(--fg-2); margin: 12px 0 0; }
+.footer-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+.footer-cols .eyebrow { margin-bottom: 16px; display: block; }
+.footer-cols a {
+  display: block;
+  font-size: 14px;
+  color: var(--fg-1);
+  text-decoration: none;
+  padding: 4px 0;
+}
+.footer-cols a:hover { color: var(--accent); }
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 32px;
+}
+.seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.footer-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-3);
+  letter-spacing: 0.04em;
+}

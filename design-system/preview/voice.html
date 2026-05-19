@@ -1,0 +1,32 @@
+<!doctype html><meta charset="utf-8">
+<title>Voice — Don't / Do</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; background: var(--bg); font-family: var(--font-sans); }
+  body { padding: 20px 24px; }
+  .eb { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .col { padding: 14px 16px; }
+  .col + .col { border-left: 1px solid var(--rule); }
+  .h { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+  .dont { color: #C8202F; }
+  .do { color: #2D4A87; }
+  .row { font-weight: 300; font-size: 14px; padding: 6px 0; line-height: 1.45; color: var(--fg-1); }
+  .row + .row { border-top: 1px solid var(--rule-soft); }
+  s { color: var(--fg-3); text-decoration: line-through; }
+</style>
+<div class="eb">Voice · teacher's notebook</div>
+<div class="grid">
+  <div class="col">
+    <div class="h dont">Don't say</div>
+    <div class="row"><s>Revolutionize your workflow with AI</s></div>
+    <div class="row"><s>Unleash your team's productivity</s></div>
+    <div class="row"><s>Powered by next-gen AI</s></div>
+  </div>
+  <div class="col">
+    <div class="h do">Do say</div>
+    <div class="row">Sifu watches what you do, then teaches you the system.</div>
+    <div class="row">I see you do this 14 times a week. Here's the pattern.</div>
+    <div class="row">Classified · 94.2% confidence · 312 observations.</div>
+  </div>
+</div>

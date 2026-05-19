@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8">
+<title>Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; background: var(--bg); }
+  body { padding: 20px 24px; }
+  .card { background: var(--bg); border: 1px solid var(--rule); padding: 24px; max-width: 540px; }
+  .eb { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); letter-spacing: 0.12em; text-transform: uppercase; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  h3 { font-family: var(--font-sans); font-weight: 500; font-size: 22px; letter-spacing: -0.015em; color: var(--fg-1); margin: 0 0 6px; }
+  p { font-family: var(--font-sans); font-weight: 300; font-size: 14px; color: var(--fg-2); margin: 0; line-height: 1.6; }
+  hr { border: 0; border-top: 1px solid var(--rule-soft); margin: 14px 0; }
+  .meta { display: flex; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); }
+  .meta b { font-weight: 500; color: var(--fg-1); }
+</style>
+<div class="card">
+  <div class="row">
+    <span class="eb">Workflow · 0042</span>
+    <span class="eb" style="color:#2D4A87">Watching</span>
+  </div>
+  <h3>Ticket triage, Tuesday mornings</h3>
+  <p>I see you do this 14 times a week. The pattern is consistent: open inbox, sort by age, draft response, tag.</p>
+  <hr>
+  <div class="meta"><span><b>312</b> observations</span><span><b>94.2%</b> confidence</span><span>14 days</span></div>
+</div>

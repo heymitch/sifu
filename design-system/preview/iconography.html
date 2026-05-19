@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8">
+<title>Iconography</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; background: var(--bg); }
+  body { padding: 20px 24px; }
+  .eb { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+  .ic { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; border: 1px solid var(--rule-soft); }
+  .glyph { font-family: var(--font-mono); font-size: 22px; color: #1F1F1F; line-height: 1; }
+  .name { font-family: var(--font-mono); font-size: 9px; color: var(--fg-2); letter-spacing: 0.08em; text-transform: uppercase; }
+  svg { stroke: #1F1F1F; stroke-width: 1.5; fill: none; stroke-linecap: square; stroke-linejoin: miter; }
+</style>
+<div class="eb">Iconography · type-as-icon · 1.5px stroke SVG (Lucide-style)</div>
+<div class="grid">
+  <div class="ic"><div class="glyph">·</div><div class="name">Sep</div></div>
+  <div class="ic"><div class="glyph">→</div><div class="name">Forward</div></div>
+  <div class="ic"><div class="glyph">↑</div><div class="name">Up</div></div>
+  <div class="ic"><div class="glyph">↓</div><div class="name">Down</div></div>
+  <div class="ic"><div class="glyph">✓</div><div class="name">Yes</div></div>
+  <div class="ic"><div class="glyph">×</div><div class="name">No</div></div>
+
+  <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16 16l4 4"/></svg><div class="name">Search</div></div>
+  <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14"/><path d="M8 6V4h8v2"/></svg><div class="name">Save</div></div>
+  <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 1 0-7 7"/></svg><div class="name">Watch</div></div>
+  <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/></svg><div class="name">Sort</div></div>
+  <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M4 9h16M9 4v16"/></svg><div class="name">Layout</div></div>
+  <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><div class="name">Next</div></div>
+</div>
