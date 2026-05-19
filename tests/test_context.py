@@ -21,3 +21,7 @@ def test_context_output_has_pointer_and_instruction(tmp_path, monkeypatch):
     assert "# Deploy the site" in out
     assert str(library.unit_dir("wf-deploy-001") / "macro.json") in out
     assert "NavMacro" in out and "vision" in out.lower()
+
+def test_render_context_returns_none_on_no_match(tmp_path, monkeypatch):
+    _seed(tmp_path, monkeypatch)
+    assert context_cmd.render_context("nothing-matches-zzz-xyz") is None

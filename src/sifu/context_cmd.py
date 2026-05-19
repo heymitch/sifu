@@ -24,6 +24,8 @@ def best_match(query: str):
     best, best_s = None, 0
     for wid in library.list_units():
         u = library.read_unit(wid)
+        if u is None:
+            continue
         hay = (u["workflow_md"] + " " + " ".join(u["meta"].get("app_set", [])) + " " + wid)
         s = _score(query, hay)
         if s > best_s:
@@ -36,6 +38,8 @@ def render_context(query: str):
     if wid is None:
         return None
     u = library.read_unit(wid)
+    if u is None:
+        return None
     macro_path = library.unit_dir(wid) / "macro.json"
     return (f"WORKFLOW · {wid}\n\n{u['workflow_md']}\n\n"
             f"MACRO: {macro_path}{_INSTRUCTION}")
