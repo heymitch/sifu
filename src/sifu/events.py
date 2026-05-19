@@ -55,6 +55,11 @@ class Event:
     text_content: Optional[str] = None
     shortcut: Optional[str] = None
     screenshot_path: Optional[str] = None
+    display_id: Optional[int] = None
+    display_bounds: Optional[str] = None   # JSON "[x,y,w,h]" of the display
+    window_rect: Optional[str] = None      # JSON "[x,y,w,h]" of focused window
+    backing_scale: Optional[float] = None  # retina scale factor
+    url: Optional[str] = None             # browser address-bar URL (browser apps only)
     session_id: Optional[str] = None
     workflow_id: Optional[str] = None
     id: Optional[int] = None

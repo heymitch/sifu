@@ -24,3 +24,22 @@ def test_migrate_db_adds_columns_to_old_table():
     assert FRAME_COLS.issubset(cols)
     migrate_db(conn)  # idempotent: must not raise
     conn.close()
+
+
+from sifu.events import Event, EventType
+
+
+def test_event_roundtrips_frame_fields():
+    e = Event(
+        type=EventType.CLICK, app="Google Chrome",
+        position_x=840, position_y=312,
+        display_id=1, display_bounds="[0,0,1920,1080]",
+        window_rect="[120,80,1280,800]", backing_scale=2.0,
+        url="https://app.stripe.com/cart",
+    )
+    d = e.to_dict()
+    assert d["display_id"] == 1
+    assert d["url"] == "https://app.stripe.com/cart"
+    e2 = Event.from_dict(d)
+    assert e2.backing_scale == 2.0
+    assert e2.window_rect == "[120,80,1280,800]"
