@@ -83,6 +83,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self = self else { return }
             let sessionId = self.sessionManager.sessionId
 
+            let frame = EventTapManager.getFrameSnapshot()
+            let url = AppTracker.currentBrowserURL(appName: captured.app)
+
             let eventId = self.eventStore.insertEvent(
                 timestamp: SessionManager.isoNow(),
                 type: captured.type,
@@ -95,7 +98,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 textContent: captured.textContent,
                 shortcut: captured.shortcut,
                 screenshotPath: nil,
-                sessionId: sessionId
+                sessionId: sessionId,
+                displayId: frame?.displayID,
+                displayBounds: frame?.displayBounds,
+                windowRect: frame?.windowRect,
+                backingScale: frame?.backingScale,
+                url: url
             )
             self.sessionManager.incrementEventCount()
 
@@ -122,6 +130,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.eventTapManager.flushText()
             }
 
+            let frame = EventTapManager.getFrameSnapshot()
+            let url = AppTracker.currentBrowserURL(appName: app)
+
             let eventId = self.eventStore.insertEvent(
                 timestamp: SessionManager.isoNow(),
                 type: eventType,
@@ -134,7 +145,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 textContent: nil,
                 shortcut: nil,
                 screenshotPath: nil,
-                sessionId: sessionId
+                sessionId: sessionId,
+                displayId: frame?.displayID,
+                displayBounds: frame?.displayBounds,
+                windowRect: frame?.windowRect,
+                backingScale: frame?.backingScale,
+                url: url
             )
             self.sessionManager.incrementEventCount()
 

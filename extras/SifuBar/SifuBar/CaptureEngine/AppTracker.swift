@@ -15,6 +15,23 @@ final class AppTracker {
         self.config = config
     }
 
+    // MARK: - Browser URL
+
+    static let browserApps: Set<String> = ["Google Chrome", "Safari", "Arc", "Microsoft Edge", "Brave Browser"]
+
+    static func currentBrowserURL(appName: String?) -> String? {
+        guard let appName = appName, browserApps.contains(appName) else { return nil }
+        guard let app = NSWorkspace.shared.frontmostApplication else { return nil }
+        let axApp = AXUIElementCreateApplication(app.processIdentifier)
+        var winRef: CFTypeRef?
+        AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &winRef)
+        guard let win = winRef else { return nil }
+        var urlRef: CFTypeRef?
+        let err = AXUIElementCopyAttributeValue(win as! AXUIElement, "AXURL" as CFString, &urlRef)
+        if err == .success, let u = urlRef as? NSURL { return u.absoluteString }
+        return nil
+    }
+
     func start() {
         // Snapshot initial state
         if let app = NSWorkspace.shared.frontmostApplication {

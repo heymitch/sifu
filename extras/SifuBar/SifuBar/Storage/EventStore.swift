@@ -41,7 +41,12 @@ final class EventStore: @unchecked Sendable {
             shortcut TEXT,
             screenshot_path TEXT,
             session_id TEXT,
-            workflow_id TEXT
+            workflow_id TEXT,
+            display_id INTEGER,
+            display_bounds TEXT,
+            window_rect TEXT,
+            backing_scale REAL,
+            url TEXT
         );
         CREATE TABLE IF NOT EXISTS sessions (
             id TEXT PRIMARY KEY,
@@ -74,7 +79,12 @@ final class EventStore: @unchecked Sendable {
         shortcut: String?,
         screenshotPath: String?,
         sessionId: String?,
-        workflowId: String? = nil
+        workflowId: String? = nil,
+        displayId: Int? = nil,
+        displayBounds: [Int]? = nil,
+        windowRect: [Int]? = nil,
+        backingScale: Double? = nil,
+        url: String? = nil
     ) -> Int64 {
         var rowId: Int64 = 0
         queue.sync {
@@ -82,8 +92,9 @@ final class EventStore: @unchecked Sendable {
             INSERT INTO events
                 (timestamp, type, app, window, description, element,
                  position_x, position_y, text_content, shortcut,
-                 screenshot_path, session_id, workflow_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 screenshot_path, session_id, workflow_id,
+                 display_id, display_bounds, window_rect, backing_scale, url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             var stmt: OpaquePointer?
             guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
@@ -102,6 +113,11 @@ final class EventStore: @unchecked Sendable {
             Self.bindOptionalText(stmt, 11, screenshotPath)
             Self.bindOptionalText(stmt, 12, sessionId)
             Self.bindOptionalText(stmt, 13, workflowId)
+            Self.bindOptionalInt(stmt, 14, displayId)
+            Self.bindOptionalText(stmt, 15, Self.encodeIntArray(displayBounds))
+            Self.bindOptionalText(stmt, 16, Self.encodeIntArray(windowRect))
+            Self.bindOptionalDouble(stmt, 17, backingScale)
+            Self.bindOptionalText(stmt, 18, url)
 
             sqlite3_step(stmt)
             rowId = sqlite3_last_insert_rowid(db)
@@ -225,5 +241,19 @@ final class EventStore: @unchecked Sendable {
         } else {
             sqlite3_bind_null(stmt, index)
         }
+    }
+
+    private static func bindOptionalDouble(_ stmt: OpaquePointer?, _ index: Int32, _ value: Double?) {
+        if let value = value {
+            sqlite3_bind_double(stmt, index, value)
+        } else {
+            sqlite3_bind_null(stmt, index)
+        }
+    }
+
+    /// Encode an int array as a compact JSON string, e.g. [120,80,1280,800].
+    private static func encodeIntArray(_ value: [Int]?) -> String? {
+        guard let value = value else { return nil }
+        return "[" + value.map(String.init).joined(separator: ",") + "]"
     }
 }

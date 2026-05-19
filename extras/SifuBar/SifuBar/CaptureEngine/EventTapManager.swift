@@ -307,6 +307,40 @@ final class EventTapManager {
         return titleStr
     }
 
+    struct FrameSnapshot {
+        let displayID: Int
+        let displayBounds: [Int]   // [x,y,w,h]
+        let windowRect: [Int]      // [x,y,w,h]
+        let backingScale: Double
+    }
+
+    static func getFrameSnapshot() -> FrameSnapshot? {
+        guard let app = NSWorkspace.shared.frontmostApplication else { return nil }
+        let axApp = AXUIElementCreateApplication(app.processIdentifier)
+        var winRef: CFTypeRef?
+        AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &winRef)
+        guard let win = winRef else { return nil }
+        var posRef: CFTypeRef?
+        var sizeRef: CFTypeRef?
+        AXUIElementCopyAttributeValue(win as! AXUIElement, kAXPositionAttribute as CFString, &posRef)
+        AXUIElementCopyAttributeValue(win as! AXUIElement, kAXSizeAttribute as CFString, &sizeRef)
+        var pos = CGPoint.zero
+        var size = CGSize.zero
+        if let p = posRef { AXValueGetValue(p as! AXValue, .cgPoint, &pos) }
+        if let s = sizeRef { AXValueGetValue(s as! AXValue, .cgSize, &size) }
+        let winRect = CGRect(origin: pos, size: size)
+        let screen = NSScreen.screens.first { $0.frame.intersects(winRect) } ?? NSScreen.main
+        guard let scr = screen else { return nil }
+        let f = scr.frame
+        let did = (scr.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? Int) ?? 0
+        return FrameSnapshot(
+            displayID: did,
+            displayBounds: [Int(f.origin.x), Int(f.origin.y), Int(f.width), Int(f.height)],
+            windowRect: [Int(pos.x), Int(pos.y), Int(size.width), Int(size.height)],
+            backingScale: Double(scr.backingScaleFactor)
+        )
+    }
+
     static func getElementAtPosition(x: CGFloat, y: CGFloat) -> String? {
         let systemWide = AXUIElementCreateSystemWide()
         var element: AXUIElement?
