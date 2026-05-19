@@ -319,15 +319,20 @@ final class EventTapManager {
         let axApp = AXUIElementCreateApplication(app.processIdentifier)
         var winRef: CFTypeRef?
         AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &winRef)
-        guard let win = winRef else { return nil }
+        guard let winRaw = winRef, CFGetTypeID(winRaw) == AXUIElementGetTypeID() else { return nil }
+        let win = winRaw as! AXUIElement
         var posRef: CFTypeRef?
         var sizeRef: CFTypeRef?
-        AXUIElementCopyAttributeValue(win as! AXUIElement, kAXPositionAttribute as CFString, &posRef)
-        AXUIElementCopyAttributeValue(win as! AXUIElement, kAXSizeAttribute as CFString, &sizeRef)
+        AXUIElementCopyAttributeValue(win, kAXPositionAttribute as CFString, &posRef)
+        AXUIElementCopyAttributeValue(win, kAXSizeAttribute as CFString, &sizeRef)
         var pos = CGPoint.zero
         var size = CGSize.zero
-        if let p = posRef { AXValueGetValue(p as! AXValue, .cgPoint, &pos) }
-        if let s = sizeRef { AXValueGetValue(s as! AXValue, .cgSize, &size) }
+        if let pRaw = posRef, CFGetTypeID(pRaw) == AXValueGetTypeID() {
+            AXValueGetValue(pRaw as! AXValue, .cgPoint, &pos)
+        }
+        if let sRaw = sizeRef, CFGetTypeID(sRaw) == AXValueGetTypeID() {
+            AXValueGetValue(sRaw as! AXValue, .cgSize, &size)
+        }
         let winRect = CGRect(origin: pos, size: size)
         let screen = NSScreen.screens.first { $0.frame.intersects(winRect) } ?? NSScreen.main
         guard let scr = screen else { return nil }

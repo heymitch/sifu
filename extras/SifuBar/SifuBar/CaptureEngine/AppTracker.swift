@@ -25,9 +25,10 @@ final class AppTracker {
         let axApp = AXUIElementCreateApplication(app.processIdentifier)
         var winRef: CFTypeRef?
         AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &winRef)
-        guard let win = winRef else { return nil }
+        guard let winRaw = winRef, CFGetTypeID(winRaw) == AXUIElementGetTypeID() else { return nil }
+        let win = winRaw as! AXUIElement
         var urlRef: CFTypeRef?
-        let err = AXUIElementCopyAttributeValue(win as! AXUIElement, "AXURL" as CFString, &urlRef)
+        let err = AXUIElementCopyAttributeValue(win, "AXURL" as CFString, &urlRef)
         if err == .success, let u = urlRef as? NSURL { return u.absoluteString }
         return nil
     }
