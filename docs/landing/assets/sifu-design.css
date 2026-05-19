@@ -1,0 +1,284 @@
+/* ============================================================
+   Sifu — Colors & Type
+   Japanese industrial design. MUJI lab notebook. Quiet product.
+   Precision over personality. Function before flourish.
+   ============================================================ */
+
+/* IBM Plex Sans + JetBrains Mono — both available on Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* ---------- COLOR ---------- */
+  /* Primary palette — paper, ink, and the spaces between */
+  --sifu-bone:        #F2F0EB;   /* Bone white — primary background, paper-stock neutral */
+  --sifu-charcoal:    #1F1F1F;   /* Charcoal — primary text, ink black with the warmth removed */
+  --sifu-pale-grey:   #C9C7C2;   /* Pale grey — dividers, secondary surfaces */
+  --sifu-warm-grey:   #5A5752;   /* Warm grey — secondary text, captions */
+  --sifu-indigo:      #2D4A87;   /* Indigo — single functional accent (links, status, the seal) */
+
+  /* Structural accent — used <2% of any composition */
+  --sifu-stamp-red:   #C8202F;   /* Stamp red — verified / approved / critical */
+
+  /* Surface tints — derivatives, not new colors */
+  --sifu-bone-deep:   #ECEAE3;   /* Slightly deeper paper for nested surfaces */
+  --sifu-bone-soft:   #F7F5F1;   /* Softest paper, cards on bone */
+  --sifu-ink-soft:    #2A2A28;   /* Slightly softer ink for body */
+
+  /* ---------- SEMANTIC TOKENS ---------- */
+  --bg:               var(--sifu-bone);
+  --bg-soft:          var(--sifu-bone-soft);
+  --bg-deep:          var(--sifu-bone-deep);
+  --surface:          #FFFFFF;          /* Reserved — used sparingly for "card-on-paper" */
+
+  --fg:               var(--sifu-charcoal);
+  --fg-1:             var(--sifu-charcoal);   /* Primary text */
+  --fg-2:             var(--sifu-warm-grey);  /* Secondary / captions */
+  --fg-3:             #8A8782;                /* Tertiary / metadata */
+  --fg-on-indigo:     var(--sifu-bone);
+
+  --rule:             var(--sifu-pale-grey); /* Dividers, hairlines */
+  --rule-soft:        #DEDCD7;
+  --rule-strong:      var(--sifu-charcoal);
+
+  --accent:           var(--sifu-indigo);
+  --accent-fg:        var(--sifu-bone);
+  --stamp:            var(--sifu-stamp-red);
+
+  /* States */
+  --link:             var(--sifu-indigo);
+  --link-hover:       #1F3766;   /* Darker indigo, no purple shift */
+  --press-tint:       rgba(31, 31, 31, 0.06);
+  --hover-tint:       rgba(31, 31, 31, 0.04);
+  --focus-ring:       var(--sifu-indigo);
+
+  /* ---------- TYPE ---------- */
+  --font-sans:        'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:        'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  /* No serifs. No condensed cuts. */
+
+  /* Weights — discipline through restraint */
+  --weight-light:     300;   /* Body */
+  --weight-regular:   400;   /* Mono default, UI */
+  --weight-medium:    500;   /* Headings */
+  --weight-bold:      700;   /* Sparingly — single words, stamps, IDs */
+
+  /* Type scale — modest ratio, paper-document feel */
+  --fs-12:            0.75rem;
+  --fs-13:            0.8125rem;
+  --fs-14:            0.875rem;
+  --fs-15:            0.9375rem;
+  --fs-16:            1rem;
+  --fs-18:            1.125rem;
+  --fs-20:            1.25rem;
+  --fs-24:            1.5rem;
+  --fs-32:            2rem;
+  --fs-44:            2.75rem;
+  --fs-64:            4rem;
+  --fs-88:            5.5rem;
+
+  /* Line-heights — generous, like a notebook */
+  --lh-tight:         1.1;
+  --lh-snug:          1.25;
+  --lh-normal:        1.5;
+  --lh-relaxed:       1.65;
+
+  /* Tracking — minimal, only for caps + mono labels */
+  --tr-tight:         -0.01em;
+  --tr-normal:        0;
+  --tr-loose:         0.04em;
+  --tr-caps:          0.12em;
+
+  /* ---------- SPACING (4px base) ---------- */
+  --sp-1:             4px;
+  --sp-2:             8px;
+  --sp-3:             12px;
+  --sp-4:             16px;
+  --sp-5:             24px;
+  --sp-6:             32px;
+  --sp-7:             48px;
+  --sp-8:             64px;
+  --sp-9:             96px;
+  --sp-10:            128px;
+
+  /* ---------- RADII (sharp by default) ---------- */
+  --r-0:              0px;       /* Default — paper has corners */
+  --r-1:              2px;       /* Subtle softening on inputs */
+  --r-2:              4px;       /* Cards, max */
+  --r-pill:           999px;     /* Mono tags / status pills only */
+
+  /* ---------- BORDERS ---------- */
+  --bw-hair:          0.5px;
+  --bw-1:             1px;
+  --bw-2:             2px;
+
+  /* ---------- ELEVATION ----------
+     No drop shadows. Elevation = inset hairlines and bone tints. */
+  --elev-0:           none;
+  --elev-rule:        inset 0 0 0 1px var(--rule);
+  --elev-rule-soft:   inset 0 0 0 1px var(--rule-soft);
+
+  /* ---------- MOTION ----------
+     Calm. No bounce. */
+  --ease-standard:    cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:         cubic-bezier(0.0, 0, 0.2, 1);
+  --dur-fast:         120ms;
+  --dur-base:         200ms;
+  --dur-slow:         320ms;
+
+  /* ---------- LAYOUT ---------- */
+  --max-w-text:       64ch;
+  --max-w-content:    1080px;
+  --max-w-wide:       1280px;
+  --gutter:           var(--sp-7);
+}
+
+/* ============================================================
+   BASE ELEMENTS — semantic defaults
+   ============================================================ */
+
+html, body {
+  background: var(--bg);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-light);
+  font-size: var(--fs-16);
+  line-height: var(--lh-relaxed);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--sifu-indigo);
+  color: var(--sifu-bone);
+}
+
+/* Headings — Medium weight, tight tracking, no all-caps drama */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: var(--weight-medium);
+  color: var(--fg-1);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tr-tight);
+  margin: 0;
+  text-wrap: balance;
+}
+
+h1 { font-size: var(--fs-64); line-height: var(--lh-tight); letter-spacing: -0.02em; }
+h2 { font-size: var(--fs-44); line-height: var(--lh-tight); letter-spacing: -0.015em; }
+h3 { font-size: var(--fs-32); }
+h4 { font-size: var(--fs-24); }
+h5 { font-size: var(--fs-20); }
+h6 { font-size: var(--fs-16); font-weight: var(--weight-medium); }
+
+p {
+  margin: 0;
+  font-size: var(--fs-16);
+  line-height: var(--lh-relaxed);
+  color: var(--fg-1);
+  text-wrap: pretty;
+  max-width: var(--max-w-text);
+}
+
+small, .caption {
+  font-size: var(--fs-13);
+  color: var(--fg-2);
+  line-height: var(--lh-normal);
+}
+
+/* Mono — data, IDs, log labels, code references */
+code, kbd, samp, pre, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  font-weight: var(--weight-regular);
+}
+
+code {
+  color: var(--fg-1);
+  background: var(--bg-deep);
+  padding: 1px 6px;
+  border-radius: var(--r-1);
+}
+
+pre {
+  font-size: var(--fs-13);
+  line-height: var(--lh-normal);
+  background: var(--bg-deep);
+  border: 1px solid var(--rule);
+  padding: var(--sp-5);
+  overflow-x: auto;
+  margin: 0;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Eyebrows / labels — mono caps, the lab-notebook signature */
+.eyebrow,
+.label-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  font-weight: var(--weight-regular);
+  color: var(--fg-2);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+}
+
+/* Links — single accent, underline by default */
+a {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+a:hover  { color: var(--link-hover); }
+a:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Rules — hairline dividers are a primary structural element */
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: var(--sp-6) 0;
+}
+
+/* Forms — sharp, quiet */
+input, textarea, select, button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* Stamp — used for "verified / classified" moments only */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+  color: var(--stamp);
+  border: 1.5px solid var(--stamp);
+  padding: 4px 8px;
+  border-radius: var(--r-1);
+}
+
+/* Indigo seal — the functional accent */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+  color: var(--accent);
+}

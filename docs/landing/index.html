@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sifu · Workflow classifier</title>
-  <link rel="stylesheet" href="../../design-system/colors_and_type.css">
+  <link rel="stylesheet" href="assets/sifu-design.css">
   <style>
     /* ============================================================
        Marketing landing page — Sifu v0.1
@@ -120,61 +120,38 @@
       margin: 0 0 48px;
     }
 
-    /* ---------- Give-to-agent prompt block ---------- */
-    .prompt-block {
-      position: relative;
+    /* ---------- Hero CTA block ---------- */
+    .hero-cta {
       margin: 0 0 40px;
-      max-width: 64ch;
     }
-    .prompt-label {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--fg-3);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-      display: block;
-    }
-    .prompt-pre {
-      font-family: var(--font-mono);
-      font-size: 13px;
-      line-height: 1.55;
-      background: var(--bg-deep);
-      border: 1px solid var(--rule);
-      padding: 24px 28px;
-      overflow-x: auto;
-      margin: 0;
-      white-space: pre-wrap;
-      word-break: break-word;
-      color: var(--fg-1);
-    }
-    .prompt-pre code {
-      background: transparent;
-      padding: 0;
-      font-size: inherit;
-    }
-    .copy-btn {
-      position: absolute;
-      top: 32px;
-      right: 10px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--fg-2);
-      background: var(--bg-deep);
-      border: 1px solid var(--rule);
-      padding: 4px 10px;
+    .cta-btn {
+      display: inline-block;
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 15px;
+      letter-spacing: 0;
+      color: var(--accent-fg);
+      background: var(--accent);
+      border: none;
+      padding: 13px 28px;
       cursor: pointer;
-      transition: color 120ms, border-color 120ms;
+      border-radius: var(--r-1);
+      transition: background 200ms var(--ease-standard);
     }
-    .copy-btn:hover {
-      color: var(--accent);
-      border-color: var(--accent);
+    .cta-btn:hover {
+      background: var(--link-hover);
     }
-    .copy-btn:focus-visible {
+    .cta-btn:focus-visible {
       outline: 2px solid var(--focus-ring);
       outline-offset: 2px;
+    }
+    .cta-micro {
+      display: block;
+      margin-top: 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg-3);
+      letter-spacing: 0.04em;
     }
 
     .hero-meta {
@@ -380,7 +357,163 @@
       letter-spacing: 0.04em;
     }
 
+    /* ---------- Side panel ---------- */
+    .panel-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(31,31,31,0.06);
+      z-index: 100;
+    }
+    .panel-backdrop.is-open {
+      display: block;
+    }
+
+    .install-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 520px;
+      height: 100vh;
+      background: var(--bg);
+      border-left: 1px solid var(--rule);
+      z-index: 101;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 200ms var(--ease-standard);
+      overflow-y: auto;
+    }
+    .install-panel.is-open {
+      transform: translateX(0);
+    }
+
+    .panel-inner {
+      padding: 40px 40px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .panel-close-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 36px;
+    }
+    .panel-close {
+      font-family: var(--font-sans);
+      font-weight: 400;
+      font-size: 14px;
+      color: var(--fg-2);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.18em;
+      transition: color 120ms var(--ease-standard);
+    }
+    .panel-close:hover { color: var(--fg-1); }
+    .panel-close:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .panel-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-3);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .panel-title {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 28px;
+      letter-spacing: -0.015em;
+      color: var(--fg-1);
+      margin: 0 0 16px;
+      line-height: 1.2;
+    }
+    .panel-desc {
+      font-family: var(--font-sans);
+      font-weight: 300;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--fg-2);
+      margin: 0 0 28px;
+      max-width: 100%;
+    }
+
+    /* ---------- Panel prompt block ---------- */
+    /*
+      NOTE: the prompt text below is duplicated from
+      src/sifu/install/give-to-agent.md — v1 inlines it here for
+      zero dependencies. If that file changes, update this block too.
+    */
+    .panel-pre {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      background: var(--bg-deep);
+      border: 1px solid var(--rule);
+      padding: 24px 28px;
+      overflow-x: auto;
+      margin: 0 0 20px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--fg-1);
+    }
+    .panel-pre code {
+      background: transparent;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    .panel-copy-btn {
+      display: block;
+      width: 100%;
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 15px;
+      color: var(--accent-fg);
+      background: var(--accent);
+      border: none;
+      padding: 13px 0;
+      cursor: pointer;
+      border-radius: var(--r-1);
+      text-align: center;
+      transition: background 200ms var(--ease-standard);
+      margin-bottom: 16px;
+    }
+    .panel-copy-btn:hover {
+      background: var(--link-hover);
+    }
+    .panel-copy-btn:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .panel-footnote {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-3);
+      letter-spacing: 0.04em;
+    }
+
     /* ---------- Responsive ---------- */
+    @media (max-width: 640px) {
+      .install-panel {
+        width: 100vw;
+        border-left: none;
+        border-top: 1px solid var(--rule);
+      }
+      .panel-inner { padding: 28px 24px 40px; }
+    }
+
     @media (max-width: 720px) {
       .site-header { flex-direction: column; align-items: flex-start; padding: 24px; }
       .hero { padding: 64px 24px 56px; }
@@ -415,12 +548,9 @@
 
 <!-- ============================================================
      HERO
-     CTA: the give-to-agent prompt rendered in a <pre><code> block.
-     NOTE: the prompt text below is duplicated from
-     src/sifu/install/give-to-agent.md — v1 inlines it here for
-     zero dependencies. If that file changes, update this block too.
+     CTA: a button that opens the install-prompt side panel.
 ============================================================ -->
-<section class="hero">
+<section class="hero" id="hero">
   <div class="eyebrow">Workflow classifier &middot; Mac</div>
   <h1 class="hero-title">Train your replacement.</h1>
   <p class="hero-sub">
@@ -428,42 +558,11 @@
     the system you didn't know you already had.
   </p>
 
-  <div class="prompt-block">
-    <span class="prompt-label">Give this to your agent</span>
-    <pre class="prompt-pre"><code id="agent-prompt">Install Sifu locally so I can train my replacement.
-
-Platform: macOS only. Sifu uses CGEventTap and the macOS Accessibility
-API. It will not run on Linux or Windows.
-
-Steps:
-
-1. Clone or update:
-   If ~/sifu does not exist:
-     git clone https://github.com/heymitch/sifu.git ~/sifu
-   If ~/sifu already exists:
-     cd ~/sifu && git pull --ff-only
-
-2. Install:
-     pip install -e ~/sifu
-
-3. Run bootstrap and surface the result:
-     python3 -c "from sifu.install.bootstrap import run; print(run())"
-   Read the printed dict. Show the user the value of the "next" key.
-
-4. Accessibility permission:
-   Go to System Settings → Privacy & Security → Accessibility.
-   Add SifuBar and enable the toggle.
-   Sifu cannot capture input events without this. It must be granted
-   before capture begins.
-
-5. Report back:
-   · The "library" path printed by bootstrap
-   · The "next" step printed by bootstrap
-   · That Accessibility permission must be granted before starting
-
-Do not launch capture automatically. The user decides when observation
-begins.</code></pre>
-    <button class="copy-btn" onclick="copyPrompt()" id="copy-btn">Copy</button>
+  <div class="hero-cta">
+    <button class="cta-btn" onclick="openPanel()" aria-haspopup="dialog">
+      Give this to your agent
+    </button>
+    <span class="cta-micro">Copy the install prompt and paste it into Claude Code or Codex.</span>
   </div>
 
   <div class="hero-meta">
@@ -488,7 +587,7 @@ begins.</code></pre>
       <h3 class="how-verb">Watches</h3>
       <p class="how-body">
         Sifu sits beside you. It records the small repeated motions that
-        make up an hour of your work — clicks, opens, edits, sends.
+        make up an hour of your work &mdash; clicks, opens, edits, sends.
         Nothing leaves your machine.
       </p>
     </div>
@@ -506,7 +605,7 @@ begins.</code></pre>
       <div class="how-num">03</div>
       <h3 class="how-verb">Teaches</h3>
       <p class="how-body">
-        You receive a written report — the kind a careful teacher would
+        You receive a written report &mdash; the kind a careful teacher would
         leave on your desk. The system you built without noticing,
         written down.
       </p>
@@ -575,7 +674,7 @@ begins.</code></pre>
       </div>
       <div>
         <div class="eyebrow">Install</div>
-        <a href="#hero">Give to your agent</a>
+        <a href="#hero" onclick="openPanel(); return false;">Give to your agent</a>
         <a href="https://github.com/heymitch/sifu/blob/main/src/sifu/install/give-to-agent.md">Install prompt</a>
       </div>
       <div>
@@ -594,15 +693,156 @@ begins.</code></pre>
   </div>
 </footer>
 
+<!-- ============================================================
+     INSTALL PANEL
+     Slide-in from the right. Contains the full install prompt.
+     NOTE: the prompt text below is duplicated from
+     src/sifu/install/give-to-agent.md — v1 inlines it here for
+     zero dependencies. If that file changes, update this block too.
+============================================================ -->
+<div class="panel-backdrop" id="panel-backdrop" onclick="closePanel()" aria-hidden="true"></div>
+
+<aside class="install-panel" id="install-panel" role="dialog" aria-modal="true" aria-labelledby="panel-title">
+  <div class="panel-inner">
+
+    <div class="panel-close-row">
+      <button class="panel-close" onclick="closePanel()" id="panel-close-btn">Close</button>
+    </div>
+
+    <span class="panel-eyebrow">Install &middot; Give this to your agent</span>
+    <h2 class="panel-title" id="panel-title">Give this to your agent.</h2>
+    <p class="panel-desc">
+      Paste this into Claude Code or Codex and your agent will install
+      Sifu locally, run bootstrap, and tell you exactly what to do next.
+    </p>
+
+    <pre class="panel-pre"><code id="panel-prompt">Install Sifu locally so I can train my replacement.
+
+---
+
+## Platform
+
+macOS only. Sifu uses CGEventTap and the macOS Accessibility API to observe
+input events. It will not run on Linux or Windows.
+
+---
+
+## Steps
+
+### 1 · Clone or update the repository
+
+If `~/sifu` does not exist:
+
+```
+git clone https://github.com/heymitch/sifu.git ~/sifu
+```
+
+If `~/sifu` already exists:
+
+```
+cd ~/sifu && git pull --ff-only
+```
+
+### 2 · Install the package
+
+```
+pip install -e ~/sifu
+```
+
+This installs Sifu in editable mode. The `sifu` command will be available in
+the current Python environment.
+
+### 3 · Run bootstrap
+
+```
+python3 -c "from sifu.install.bootstrap import run; print(run())"
+```
+
+Bootstrap creates the local library directory and prints two keys:
+
+- `library` — the path where Sifu stores workflow data
+- `next` — the next command to run
+
+Surface the `next` value to the user verbatim.
+
+### 4 · Grant Accessibility permission
+
+Sifu cannot capture input events without explicit user approval.
+
+Go to: System Settings → Privacy &amp; Security → Accessibility
+
+Add SifuBar to the list and enable the toggle. Sifu will not prompt for this
+automatically — it must be granted before capture begins.
+
+### 5 · Report back
+
+Tell the user:
+
+- The `library` path printed by bootstrap
+- The `next` step printed by bootstrap
+- That Accessibility permission must be granted before starting capture
+
+Do not launch capture automatically. The user decides when Sifu begins
+observing. That decision belongs to them.
+
+---
+
+## Notes
+
+- `pip install -e ~/sifu` is idempotent. Safe to re-run.
+- Bootstrap is also idempotent. Running it again will not overwrite existing
+  library data.
+- If `pip` resolves to Python 2, use `pip3` instead.
+- The `sifu start` command begins capture. The `sifu context &lt;query&gt;` command
+  takes a free-text query, finds the best-matching library workflow by substring
+  score, and prints the workflow markdown plus an instruction line for your agent
+  to drive the macro via NavMacro/Battleship. Neither runs automatically during
+  install.</code></pre>
+
+    <button class="panel-copy-btn" onclick="copyPanelPrompt()" id="panel-copy-btn">
+      Copy
+    </button>
+
+    <span class="panel-footnote">macOS only &middot; open source &middot; privacy-first</span>
+
+  </div>
+</aside>
+
 <script>
-  function copyPrompt() {
-    var text = document.getElementById('agent-prompt').textContent;
-    navigator.clipboard.writeText(text).then(function () {
-      var btn = document.getElementById('copy-btn');
+  /* ---------- Panel open / close ---------- */
+  function openPanel() {
+    document.getElementById('install-panel').classList.add('is-open');
+    document.getElementById('panel-backdrop').classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    // Move focus to the close button for keyboard users
+    setTimeout(function () {
+      document.getElementById('panel-close-btn').focus();
+    }, 210);
+  }
+
+  function closePanel() {
+    document.getElementById('install-panel').classList.remove('is-open');
+    document.getElementById('panel-backdrop').classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  /* ESC key closes the panel */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closePanel(); }
+  });
+
+  /* ---------- Copy prompt ---------- */
+  function copyPanelPrompt() {
+    // Extract plain text from the <code> block — strip HTML entities
+    var raw = document.getElementById('panel-prompt').textContent;
+    var btn = document.getElementById('panel-copy-btn');
+
+    navigator.clipboard.writeText(raw).then(function () {
       btn.textContent = 'Copied';
-      setTimeout(function () { btn.textContent = 'Copy'; }, 2000);
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
     }).catch(function () {
-      /* clipboard API unavailable — silently no-op */
+      btn.textContent = 'Press ⌘C';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1800);
     });
   }
 </script>
