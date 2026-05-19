@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS events (
     text_content TEXT,
     shortcut TEXT,
     screenshot_path TEXT,
+    display_id INTEGER,
+    display_bounds TEXT,
+    window_rect TEXT,
+    backing_scale REAL,
+    url TEXT,
     session_id TEXT,
     workflow_id TEXT
 );
@@ -39,12 +44,31 @@ CREATE INDEX IF NOT EXISTS idx_events_app ON events(app);
 """
 
 
+_FRAME_COLUMNS = [
+    ("display_id", "INTEGER"),
+    ("display_bounds", "TEXT"),
+    ("window_rect", "TEXT"),
+    ("backing_scale", "REAL"),
+    ("url", "TEXT"),
+]
+
+
+def migrate_db(conn) -> None:
+    """Add frame/url columns to a pre-existing events table. Idempotent."""
+    existing = {r[1] for r in conn.execute("PRAGMA table_info(events)")}
+    for name, sqltype in _FRAME_COLUMNS:
+        if name not in existing:
+            conn.execute(f"ALTER TABLE events ADD COLUMN {name} {sqltype}")
+    conn.commit()
+
+
 def init_db() -> sqlite3.Connection:
     """Initialize the database, creating tables if needed."""
     SIFU_DIR.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    migrate_db(conn)
     conn.commit()
     return conn
 
@@ -55,6 +79,7 @@ def get_connection() -> sqlite3.Connection:
         return init_db()
     conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    migrate_db(conn)
     return conn
 
 
