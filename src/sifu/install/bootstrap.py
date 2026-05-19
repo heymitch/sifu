@@ -7,5 +7,5 @@ def run() -> dict:
     library.LIBRARY_DIR.mkdir(parents=True, exist_ok=True)
     return {
         "library": str(library.LIBRARY_DIR),
-        "next": "Run `sifu start` to begin capture, then `sifu context <task>`.",
+        "next": "Open the SifuBar menu to start capture, then use `sifu context <query>` to hand a recorded workflow to your agent.",
     }

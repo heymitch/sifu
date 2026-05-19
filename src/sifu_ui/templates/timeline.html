@@ -7,4 +7,8 @@
   <small>{{ r.captured_at or "—" }} · {{ r.step_count }} steps · {{ r.app_set|join(" · ") }}</small>
 </a>
 {% else %}<p>No workflows yet. Run <code>sifu start</code>.</p>{% endfor %}
+<script>
+  const es = new EventSource("/api/events");
+  es.onmessage = (e) => { location.reload(); };
+</script>
 {% endblock %}

@@ -27,6 +27,11 @@ def write_unit(workflow_id: str, workflow_md: str, macro: dict,
         src = Path(src)
         if src.exists():
             shutil.copy2(src, shots / f"{i:03d}{src.suffix or '.jpg'}")
+    try:
+        from sifu_ui.watcher import notify
+        notify(workflow_id)
+    except ImportError:
+        pass  # sifu_ui is an optional extra
     return d
 
 

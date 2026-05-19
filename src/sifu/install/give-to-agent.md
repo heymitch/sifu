@@ -75,5 +75,8 @@ observing. That decision belongs to them.
 - Bootstrap is also idempotent. Running it again will not overwrite existing
   library data.
 - If `pip` resolves to Python 2, use `pip3` instead.
-- The `sifu start` command begins capture. The `sifu context <task>` command
-  sets the active task label. Neither runs automatically during install.
+- The `sifu start` command begins capture. The `sifu context <query>` command
+  takes a free-text query, finds the best-matching library workflow by substring
+  score, and prints the workflow markdown plus an instruction line for your agent
+  to drive the macro via NavMacro/Battleship. Neither runs automatically during
+  install.

@@ -62,6 +62,38 @@ final class EventStore: @unchecked Sendable {
         queue.sync {
             sqlite3_exec(db, sql, nil, nil, nil)
         }
+        migrateDB()
+    }
+
+    /// Idempotent ALTER TABLE pass — adds columns introduced after initial schema.
+    /// Mirrors Python's migrate_db(). Safe to call on any existing database.
+    private func migrateDB() {
+        let newColumns: [(name: String, definition: String)] = [
+            ("display_id",     "display_id INTEGER"),
+            ("display_bounds", "display_bounds TEXT"),
+            ("window_rect",    "window_rect TEXT"),
+            ("backing_scale",  "backing_scale REAL"),
+            ("url",            "url TEXT"),
+        ]
+        queue.sync {
+            // Fetch current column names via PRAGMA.
+            var existingColumns = Set<String>()
+            let pragmaSQL = "PRAGMA table_info(events);"
+            var stmt: OpaquePointer?
+            if sqlite3_prepare_v2(db, pragmaSQL, -1, &stmt, nil) == SQLITE_OK {
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                    if let cStr = sqlite3_column_text(stmt, 1) {
+                        existingColumns.insert(String(cString: cStr))
+                    }
+                }
+            }
+            sqlite3_finalize(stmt)
+
+            for col in newColumns where !existingColumns.contains(col.name) {
+                let alterSQL = "ALTER TABLE events ADD COLUMN \(col.definition);"
+                sqlite3_exec(db, alterSQL, nil, nil, nil)
+            }
+        }
     }
 
     // MARK: - Event insertion
