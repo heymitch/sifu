@@ -1,6 +1,7 @@
 """Tests for the canonical workflow library + schema migration."""
 import sqlite3
 from sifu.storage.db import SCHEMA, migrate_db
+from sifu.events import Event, EventType
 
 FRAME_COLS = {"display_id", "display_bounds", "window_rect", "backing_scale", "url"}
 
@@ -26,9 +27,6 @@ def test_migrate_db_adds_columns_to_old_table():
     conn.close()
 
 
-from sifu.events import Event, EventType
-
-
 def test_event_roundtrips_frame_fields():
     e = Event(
         type=EventType.CLICK, app="Google Chrome",
@@ -41,5 +39,6 @@ def test_event_roundtrips_frame_fields():
     assert d["display_id"] == 1
     assert d["url"] == "https://app.stripe.com/cart"
     e2 = Event.from_dict(d)
+    assert d["display_bounds"] == "[0,0,1920,1080]"
     assert e2.backing_scale == 2.0
     assert e2.window_rect == "[120,80,1280,800]"
