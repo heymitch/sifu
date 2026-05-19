@@ -1,8 +1,14 @@
 """SOP Compiler (Layer 2) — LLM-powered SOP generation from workflow segments."""
 
+import os
+import re
 import subprocess
+import tempfile
 from pathlib import Path
 
+from sifu import library
+from sifu.compiler.macro import build_macro
+from sifu.compiler.meta import build_meta
 from sifu.llm import claude_cmd
 from sifu.storage.db import get_connection, get_events_by_workflow, DB_PATH
 
@@ -26,10 +32,9 @@ def _open_sops(paths: list):
 def _notify(compiled_count: int):
     """Send a macOS notification when compilation finishes."""
     if compiled_count > 0:
-        sops_dir = _get_sops_dir()
-        msg = f"{compiled_count} SOP{'s' if compiled_count != 1 else ''} compiled → {sops_dir}"
+        msg = f"{compiled_count} workflow{'s' if compiled_count != 1 else ''} compiled → {library.LIBRARY_DIR}"
     else:
-        msg = "No new SOPs to compile."
+        msg = "No new workflows to compile."
     subprocess.Popen([
         "osascript", "-e",
         f'display notification "{msg}" with title "Sifu"',
@@ -66,17 +71,17 @@ def compile_single(workflow_id: str) -> Path:
     if not events:
         raise ValueError(f"No events found for workflow {workflow_id}")
 
-    from sifu import library
-    from sifu.compiler.macro import build_macro
-    from sifu.compiler.meta import build_meta
+    if not re.match(r'^[\w\-]+$', workflow_id):
+        raise ValueError(f"unsafe workflow_id: {workflow_id!r}")
 
     rows = [dict(e) for e in events]
     screenshots = [r["screenshot_path"] for r in rows if r.get("screenshot_path")]
 
-    unit = library.unit_dir(workflow_id)
-    unit.mkdir(parents=True, exist_ok=True)
-    md_path = unit / "workflow.md"
     screenshots_dir = Path.home() / ".sifu" / "screenshots"
+    tmp_fd, tmp_path_str = tempfile.mkstemp(suffix=".md")
+    os.close(tmp_fd)
+    tmp_md_path = Path(tmp_path_str)
+
     prompt = f"""Compile workflow "{workflow_id}" into a polished SOP.
 
 DATABASE: {DB_PATH}
@@ -84,7 +89,7 @@ Query: SELECT * FROM events WHERE workflow_id = '{workflow_id}' ORDER BY timesta
 This workflow has {len(events)} events.
 
 SCREENSHOTS: {screenshots_dir}
-OUTPUT: Write the SOP to {md_path}
+OUTPUT: Write the SOP to {tmp_md_path}
 
 VOICE: Sifu's teacher notebook — sentence case, observational, no marketing words,
 no emoji. Open with "I see you do this." style framing. Use mono-style IDs.
@@ -95,28 +100,37 @@ INSTRUCTIONS:
 3. Append a Screenshots section referencing any screenshot_path values: ![capture-N](path)
 4. Write the final SOP to the output path; print only DONE"""
 
-    result = subprocess.run(
-        claude_cmd("-p", "--model", "sonnet", "--allowedTools", "Bash,Read,Write,Grep"),
-        input=prompt, capture_output=True, text=True, timeout=600,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"Claude CLI failed: {result.stderr.strip()}")
-    if not md_path.exists():
-        content = result.stdout.strip()
-        if content and content != "DONE" and len(content) > 10:
-            md_path.write_text(content, encoding="utf-8")
+    try:
+        result = subprocess.run(
+            claude_cmd("-p", "--model", "sonnet", "--allowedTools", "Bash,Read,Write,Grep"),
+            input=prompt, capture_output=True, text=True, timeout=600,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Claude CLI failed: {result.stderr.strip()}")
+
+        if tmp_md_path.exists() and tmp_md_path.stat().st_size > 0:
+            workflow_md = tmp_md_path.read_text(encoding="utf-8")
         else:
-            raise RuntimeError(f"Claude CLI did not write {md_path}")
+            content = result.stdout.strip()
+            if content and content != "DONE" and len(content) > 10:
+                workflow_md = content
+            else:
+                raise RuntimeError(f"Claude CLI did not write {tmp_md_path}")
+    finally:
+        try:
+            tmp_md_path.unlink()
+        except Exception:
+            pass
 
     macro = build_macro(workflow_id, rows)
     meta = build_meta(workflow_id, rows)
     library.write_unit(
         workflow_id,
-        workflow_md=md_path.read_text(encoding="utf-8"),
+        workflow_md=workflow_md,
         macro=macro, meta=meta,
         screenshots=[Path(s) for s in screenshots],
     )
-    return unit
+    return library.unit_dir(workflow_id)
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +139,6 @@ INSTRUCTIONS:
 
 def _get_compiled_ids() -> set:
     """Return set of workflow IDs that already have compiled library units."""
-    from sifu import library
     return set(library.list_units())
 
 
@@ -193,9 +206,7 @@ def compile_workflows(workflow=None, today=False, watch=False):
     """Compile workflow segments into SOPs."""
     import click
 
-    sops_dir = _get_sops_dir()
-    click.echo(f"  SOPs will be saved to: {sops_dir}")
-    click.echo(f"  (change with: sifu config sops_dir <path>)\n")
+    click.echo(f"  Workflows will be saved to: {library.LIBRARY_DIR}\n")
 
     if workflow:
         path = compile_single(workflow)
@@ -220,7 +231,6 @@ def compile_workflows(workflow=None, today=False, watch=False):
 def list_sops():
     """List compiled library units."""
     import click
-    from sifu import library
 
     ids = sorted(library.list_units())
     if not ids:

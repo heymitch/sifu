@@ -108,3 +108,4 @@ def test_compile_single_writes_library_unit(tmp_path, monkeypatch):
     assert (out / "macro.json").exists()
     assert (out / "meta.json").exists()
     assert (out / "workflow.md").read_text().startswith("# I see")
+    assert "I see you do this" in (out / "workflow.md").read_text()

@@ -114,6 +114,7 @@ class TestCompiler:
         assert (out / "macro.json").exists()
         assert (out / "meta.json").exists()
         assert (out / "workflow.md").exists()
+        assert "I see you do this" in (out / "workflow.md").read_text()
         assert mock_subprocess_run.called
 
     def test_get_compiled_ids_empty(self):
