@@ -5,12 +5,16 @@ observed state against `expected`. Never moves a real mouse. NavMacro
 is the real runtime; this must never grow into a competitor.
 """
 
-from sifu.compiler.contract import validate_macro
+from sifu.compiler.contract import validate_macro, ContractError
 
 
 def dry_run(macro: dict, observed: list) -> dict:
-    """`observed[i]` = the state seen AFTER firing step i (url or window
-    title), or None if the step has no expected. Returns a report."""
+    """`observed` is POSITIONALLY parallel to `macro["steps"]`: same length,
+    same indexing — `observed[i]` is the state seen AFTER firing step i (url
+    or window title).  Steps that have no `expected` post-condition have their
+    `observed[i]` ignored even if present.  If `observed` is shorter than
+    `steps`, missing entries are treated as None (triggering a mismatch for
+    any step that *does* have an expected value).  Returns a report dict."""
     validate_macro(macro)
     for i, step in enumerate(macro["steps"]):
         exp = step.get("expected")
@@ -35,7 +39,7 @@ def replay_cli(workflow_id: str) -> None:
     macro = unit["macro"]
     try:
         validate_macro(macro)
-    except Exception as exc:
+    except ContractError as exc:
         click.echo(f"✗ contract invalid: {exc}")
         return
     n = len(macro["steps"])
