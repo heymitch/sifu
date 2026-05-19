@@ -12,3 +12,17 @@ def test_meta():
     assert m["captured_at"] == "2026-05-19T10:00:00"
     assert m["source_session"] == "s1"
     assert m["duration_seconds"] == 150
+
+def test_meta_single_row_no_duration():
+    rows = [{"type":"click","app":"Chrome","timestamp":"2026-05-19T10:00:00","session_id":"s1"}]
+    m = build_meta("wf-x", rows)
+    assert m["duration_seconds"] == 0
+    assert m["step_count"] == 1
+
+def test_meta_empty_rows():
+    m = build_meta("wf-e", [])
+    assert m["step_count"] == 0
+    assert m["captured_at"] is None
+    assert m["app_set"] == []
+    assert m["duration_seconds"] == 0
+    assert m["source_session"] is None
