@@ -67,6 +67,26 @@ def show_log(app, last, limit):
     query_events(app=app, last=last, limit=limit)
 
 
+@main.command(name="context")
+@click.argument("query", nargs=-1, required=True)
+def context_cmd_cli(query):
+    """Find the best-matching workflow and print it as agent context."""
+    from sifu.context_cmd import context_cli
+
+    context_cli(" ".join(query))
+
+
+@main.command(name="replay")
+@click.option("--dry-run", "dry", is_flag=True, default=True,
+              help="Validate the macro contract (only mode in v1).")
+@click.argument("workflow_id")
+def replay_cmd_cli(dry, workflow_id):
+    """Dry-run validate a library unit's macro against the contract."""
+    from sifu.replay import replay_cli
+
+    replay_cli(workflow_id)
+
+
 @main.command()
 @click.option("--today", is_flag=True, help="Today only.")
 @click.option("--app", help="Filter by application.")
