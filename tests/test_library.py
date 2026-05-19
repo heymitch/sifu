@@ -1,3 +1,4 @@
+"""Tests for the canonical workflow library + schema migration."""
 import sqlite3
 from sifu.storage.db import SCHEMA, migrate_db
 

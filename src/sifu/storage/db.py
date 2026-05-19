@@ -54,7 +54,7 @@ _FRAME_COLUMNS = [
 
 
 def migrate_db(conn) -> None:
-    """Add frame/url columns to a pre-existing events table. Idempotent."""
+    """Idempotently add any columns in _FRAME_COLUMNS that are missing from the events table."""
     existing = {r[1] for r in conn.execute("PRAGMA table_info(events)")}
     for name, sqltype in _FRAME_COLUMNS:
         if name not in existing:
@@ -68,8 +68,8 @@ def init_db() -> sqlite3.Connection:
     conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
-    migrate_db(conn)
     conn.commit()
+    migrate_db(conn)
     return conn
 
 
