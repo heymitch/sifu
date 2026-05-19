@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block content %}
+<div class="eyebrow">WORKFLOW · {{ wid }}</div>
+<span class="stamp">Classified</span>
+<pre style="border:1px solid var(--rule);background:var(--bg-deep);padding:var(--sp-5)">{{ u.workflow_md }}</pre>
+<div class="eyebrow">Classified steps · {{ u.macro.steps|length }}</div>
+<div class="seal">師 · Verified by Sifu</div>
+<p><a href="/">← back</a></p>
+{% endblock %}
