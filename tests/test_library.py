@@ -67,3 +67,14 @@ def test_list_units(tmp_path, monkeypatch):
     library.write_unit("wf-b", "# b", {"schema_version":1,"workflow_id":"wf-b","steps":[]}, {"id":"wf-b"}, [])
     ids = sorted(library.list_units())
     assert ids == ["wf-a", "wf-b"]
+
+def test_write_unit_overwrite_clears_stale_screenshots(tmp_path, monkeypatch):
+    monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+    s1 = tmp_path / "a.jpg"; s1.write_bytes(b"a")
+    s2 = tmp_path / "b.jpg"; s2.write_bytes(b"b")
+    library.write_unit("wf-ov", "# v1", {"schema_version":1,"workflow_id":"wf-ov","steps":[]}, {"id":"wf-ov"}, [s1, s2])
+    shots = library.unit_dir("wf-ov") / "screenshots"
+    assert sorted(p.name for p in shots.iterdir()) == ["000.jpg", "001.jpg"]
+    # overwrite with ONE screenshot — stale 001.jpg must be gone
+    library.write_unit("wf-ov", "# v2", {"schema_version":1,"workflow_id":"wf-ov","steps":[]}, {"id":"wf-ov"}, [s1])
+    assert sorted(p.name for p in shots.iterdir()) == ["000.jpg"]

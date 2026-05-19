@@ -21,6 +21,7 @@ def write_unit(workflow_id: str, workflow_md: str, macro: dict,
     (d / "macro.json").write_text(json.dumps(macro, indent=2), encoding="utf-8")
     (d / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     shots = d / "screenshots"
+    shutil.rmtree(shots, ignore_errors=True)
     shots.mkdir(exist_ok=True)
     for i, src in enumerate(screenshots):
         src = Path(src)
