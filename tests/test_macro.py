@@ -1,4 +1,11 @@
+import sqlite3
+from unittest.mock import patch, MagicMock
+
 from sifu.compiler.macro import build_macro
+from sifu.events import Event, EventType
+from sifu.storage.db import SCHEMA, insert_event
+from sifu import library
+
 
 def _rows():
     return [
@@ -78,3 +85,26 @@ def test_malformed_window_rect_degrades_to_screen():
     m = build_macro("wf-bad", rows)
     assert m["steps"][0]["frame"] is None
     assert m["steps"][0]["coords"] == {"x": 1, "y": 2, "rel_to": "screen"}
+
+
+def test_compile_single_writes_library_unit(tmp_path, monkeypatch):
+    monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(SCHEMA)
+    insert_event(conn, Event(type=EventType.CLICK, app="Google Chrome",
+        position_x=10, position_y=20, url="https://x.test",
+        workflow_id="wf-int-001", session_id="s1",
+        timestamp="2026-05-19T10:00:00"))
+    conn.commit()
+
+    with patch("sifu.compiler.sop.get_connection", return_value=conn), \
+         patch("subprocess.run") as mrun:
+        mrun.return_value = MagicMock(returncode=0, stdout="# I see you do this.\n")
+        from sifu.compiler.sop import compile_single
+        out = compile_single("wf-int-001")
+
+    assert out == library.unit_dir("wf-int-001")
+    assert (out / "macro.json").exists()
+    assert (out / "meta.json").exists()
+    assert (out / "workflow.md").read_text().startswith("# I see")
