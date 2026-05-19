@@ -25,3 +25,10 @@ def test_context_output_has_pointer_and_instruction(tmp_path, monkeypatch):
 def test_render_context_returns_none_on_no_match(tmp_path, monkeypatch):
     _seed(tmp_path, monkeypatch)
     assert context_cmd.render_context("nothing-matches-zzz-xyz") is None
+
+def test_bootstrap_creates_library(tmp_path, monkeypatch):
+    from sifu.install import bootstrap
+    monkeypatch.setattr(bootstrap.library, "LIBRARY_DIR", tmp_path / "library")
+    result = bootstrap.run()
+    assert (tmp_path / "library").is_dir()
+    assert result["library"] == str(tmp_path / "library")
