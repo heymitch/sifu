@@ -6,7 +6,7 @@ from sifu import library
 def _title(md: str, fallback: str) -> str:
     for line in md.splitlines():
         if line.startswith("# "):
-            return line.lstrip("# ").strip()
+            return line[2:].strip()
     return fallback
 
 
