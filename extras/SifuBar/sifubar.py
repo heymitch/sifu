@@ -89,11 +89,11 @@ class SifuBarDelegate(NSObject):
         # Title
         if running:
             if status == "paused":
-                self.statusItem.setTitle_("\u23F8 Sifu")  # ⏸
+                self.statusItem.setTitle_("\u25CE Sifu")  # ◎
             else:
-                self.statusItem.setTitle_("\U0001F534 Sifu")  # 🔴
+                self.statusItem.setTitle_("\u25C9 Sifu")  # ◉
         else:
-            self.statusItem.setTitle_("\u26AA Sifu")  # ⚪
+            self.statusItem.setTitle_("\u25C7 Sifu")  # ◇
 
         menu = NSMenu.alloc().init()
 

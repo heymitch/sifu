@@ -35,3 +35,46 @@ def test_macro_degrades_when_frame_null():
     assert s["coords"] == {"x": 10, "y": 20, "rel_to": "screen"}
     assert s["frame"] is None
     assert s["expected"] is None
+
+def test_macro_empty_rows():
+    m = build_macro("wf-empty", [])
+    assert m == {"schema_version": 1, "workflow_id": "wf-empty", "steps": []}
+
+def test_expected_falls_back_to_window_title_when_no_url():
+    rows = [
+        {"type": "click", "app": "Notes", "position_x": 5, "position_y": 6,
+         "window_rect": None, "display_id": None, "display_bounds": None,
+         "backing_scale": None, "url": None, "screenshot_path": None,
+         "text_content": None, "shortcut": None, "window": "Note A"},
+        {"type": "click", "app": "Notes", "position_x": 7, "position_y": 8,
+         "window_rect": None, "display_id": None, "display_bounds": None,
+         "backing_scale": None, "url": None, "screenshot_path": None,
+         "text_content": None, "shortcut": None, "window": "Note B"},
+    ]
+    m = build_macro("wf-w", rows)
+    assert m["steps"][0]["expected"] == {"kind": "window_title", "value": "Note B"}
+
+def test_shortcut_and_app_switch_actions():
+    rows = [
+        {"type": "shortcut", "app": "VS Code", "position_x": None, "position_y": None,
+         "window_rect": None, "display_id": None, "display_bounds": None,
+         "backing_scale": None, "url": None, "screenshot_path": None,
+         "text_content": None, "shortcut": "cmd+s", "window": "main.py"},
+        {"type": "app_switch", "app": "Slack", "position_x": None, "position_y": None,
+         "window_rect": None, "display_id": None, "display_bounds": None,
+         "backing_scale": None, "url": None, "screenshot_path": None,
+         "text_content": None, "shortcut": None, "window": "Slack"},
+    ]
+    m = build_macro("wf-k", rows)
+    assert m["steps"][0]["action"] == "key"
+    assert m["steps"][0]["key"] == "cmd+s"
+    assert m["steps"][1]["action"] == "app_switch"
+
+def test_malformed_window_rect_degrades_to_screen():
+    rows = [{"type": "click", "app": "X", "position_x": 1, "position_y": 2,
+             "window_rect": "not-json", "display_id": None, "display_bounds": None,
+             "backing_scale": None, "url": None, "screenshot_path": None,
+             "text_content": None, "shortcut": None, "window": "X"}]
+    m = build_macro("wf-bad", rows)
+    assert m["steps"][0]["frame"] is None
+    assert m["steps"][0]["coords"] == {"x": 1, "y": 2, "rel_to": "screen"}

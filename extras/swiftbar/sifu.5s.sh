@@ -45,12 +45,12 @@ started=$(echo "$state_lines" | sed -n '4p')
 # ── Menu Bar Icon ────────────────────────────────────────
 if is_running; then
     if [ "$status" = "paused" ]; then
-        echo "⏸ Sifu"
+        echo "◎ Sifu"
     else
-        echo "🔴 Sifu | color=#E8682A"
+        echo "◉ Sifu | color=#d4687a"
     fi
 else
-    echo "⚪ Sifu"
+    echo "◇ Sifu"
 fi
 
 echo "---"
