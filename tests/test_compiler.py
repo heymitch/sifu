@@ -95,21 +95,25 @@ class TestCompiler:
         assert "/tmp/shot.jpg" in result
         assert "Screenshots" in result
 
-    @patch("subprocess.run")
-    @patch("sifu.storage.db.get_connection")
-    def test_compile_single_calls_claude(self, mock_get_conn, mock_subprocess_run):
+    def test_compile_single_calls_claude(self, tmp_path, monkeypatch):
+        from sifu import library
+        monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+
         from sifu.compiler.sop import compile_single
 
         self._insert_workflow_events("wf-compile-test")
-        mock_get_conn.return_value = self.conn
 
-        mock_result = MagicMock()
-        mock_result.returncode = 0
-        mock_result.stdout = "# How to: Search Google\n\n## Steps\n\n### 1. Open browser\nNavigated to Google."
-        mock_subprocess_run.return_value = mock_result
+        with patch("sifu.compiler.sop.get_connection", return_value=self.conn), \
+             patch("subprocess.run") as mock_subprocess_run:
+            mock_subprocess_run.return_value = MagicMock(
+                returncode=0, stdout="# I see you do this.\n"
+            )
+            out = compile_single("wf-compile-test")
 
-        path = compile_single("wf-compile-test")
-        assert path.suffix == ".md"
+        assert out == library.unit_dir("wf-compile-test")
+        assert (out / "macro.json").exists()
+        assert (out / "meta.json").exists()
+        assert (out / "workflow.md").exists()
         assert mock_subprocess_run.called
 
     def test_get_compiled_ids_empty(self):
