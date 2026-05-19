@@ -1,0 +1,6 @@
+# Only deploy the static landing — slim the upload from 60MB → ~100KB
+*
+!docs
+!docs/landing
+!docs/landing/**
+!vercel.json

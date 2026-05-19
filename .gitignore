@@ -9,3 +9,7 @@ build/
 .venv/
 venv/
 .worktrees/
+.superpowers/
+
+# Vercel link (local-only)
+/.vercel
