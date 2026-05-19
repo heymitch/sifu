@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sifu · Workflow classifier</title>
+  <link rel="stylesheet" href="../../design-system/colors_and_type.css">
+  <style>
+    /* ============================================================
+       Marketing landing page — Sifu v0.1
+       Single static HTML. No build step. No React.
+       Recreates the marketing-site UI kit structure inline.
+       Design rules applied: hairlines only, sharp corners,
+       one indigo accent, sentence case, mono eyebrows.
+    ============================================================ */
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg-1);
+      font-family: var(--font-sans);
+      font-weight: 300;
+    }
+
+    /* ---------- Layout wrapper ---------- */
+    .page-section {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 48px;
+    }
+
+    /* ---------- Header ---------- */
+    .site-header {
+      display: flex;
+      align-items: center;
+      gap: 48px;
+      padding: 28px 48px;
+      border-bottom: 1px solid var(--rule);
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0;
+      text-decoration: none;
+    }
+    .brand-name {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 22px;
+      color: var(--fg-1);
+      letter-spacing: -0.02em;
+    }
+    .brand-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-left: 3px;
+      align-self: flex-end;
+      margin-bottom: 4px;
+    }
+    .site-nav {
+      display: flex;
+      gap: 28px;
+      flex: 1;
+    }
+    .site-nav a {
+      font-family: var(--font-sans);
+      font-weight: 400;
+      font-size: 14px;
+      color: var(--fg-1);
+      text-decoration: none;
+      transition: color 120ms;
+    }
+    .site-nav a:hover { color: var(--accent); }
+    .mono-link {
+      font-family: var(--font-mono) !important;
+      font-size: 12px !important;
+      letter-spacing: 0.04em;
+      color: var(--fg-2) !important;
+    }
+
+    /* ---------- Hero ---------- */
+    .hero {
+      padding: 96px 48px 80px;
+      max-width: 1080px;
+      margin: 0 auto;
+      border-bottom: 1px solid var(--rule);
+    }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg-2);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      display: inline-block;
+    }
+    .hero-title {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 72px;
+      line-height: 1.04;
+      letter-spacing: -0.025em;
+      color: var(--fg-1);
+      margin: 0 0 28px;
+      max-width: 16ch;
+      text-wrap: balance;
+    }
+    .hero-sub {
+      font-family: var(--font-sans);
+      font-weight: 300;
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--fg-2);
+      max-width: 52ch;
+      margin: 0 0 48px;
+    }
+
+    /* ---------- Give-to-agent prompt block ---------- */
+    .prompt-block {
+      position: relative;
+      margin: 0 0 40px;
+      max-width: 64ch;
+    }
+    .prompt-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-3);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .prompt-pre {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.55;
+      background: var(--bg-deep);
+      border: 1px solid var(--rule);
+      padding: 24px 28px;
+      overflow-x: auto;
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--fg-1);
+    }
+    .prompt-pre code {
+      background: transparent;
+      padding: 0;
+      font-size: inherit;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 32px;
+      right: 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--fg-2);
+      background: var(--bg-deep);
+      border: 1px solid var(--rule);
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: color 120ms, border-color 120ms;
+    }
+    .copy-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .copy-btn:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg-2);
+      letter-spacing: 0.04em;
+    }
+    .hero-meta b { color: var(--fg-1); font-weight: 500; }
+    .meta-dot {
+      width: 3px;
+      height: 3px;
+      background: var(--fg-3);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* ---------- What it does ---------- */
+    .how {
+      padding: 96px 48px;
+      max-width: 1080px;
+      margin: 0 auto;
+      border-bottom: 1px solid var(--rule);
+    }
+    .section-title {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 44px;
+      letter-spacing: -0.02em;
+      margin: 0 0 64px;
+      color: var(--fg-1);
+      line-height: 1.1;
+    }
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      border-top: 1px solid var(--rule);
+    }
+    .how-step {
+      padding: 32px 32px 32px 0;
+      border-right: 1px solid var(--rule-soft);
+    }
+    .how-step:last-child { border-right: none; }
+    .how-step:not(:first-child) { padding-left: 32px; }
+    .how-num {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg-3);
+      letter-spacing: 0.12em;
+      margin-bottom: 24px;
+    }
+    .how-verb {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 28px;
+      letter-spacing: -0.015em;
+      margin: 0 0 12px;
+      color: var(--fg-1);
+    }
+    .how-body {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--fg-2);
+      margin: 0;
+      max-width: 32ch;
+    }
+
+    /* ---------- Why this exists ---------- */
+    .why {
+      padding: 96px 48px;
+      max-width: 1080px;
+      margin: 0 auto;
+      border-bottom: 1px solid var(--rule);
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 64px;
+      align-items: start;
+    }
+    .why-side .section-title {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+    .why-sub {
+      font-size: 15px;
+      color: var(--fg-2);
+      max-width: 36ch;
+      margin: 0;
+      line-height: 1.65;
+    }
+    .case-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      border-top: 1px solid var(--rule);
+    }
+    .case-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 110px;
+      gap: 20px;
+      align-items: center;
+      padding: 16px 8px;
+      border-bottom: 1px solid var(--rule-soft);
+      transition: background 120ms;
+    }
+    .case-row:hover { background: rgba(31,31,31,0.03); }
+    .case-id {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-2);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .case-title {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 15px;
+      color: var(--fg-1);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .case-obs {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-2);
+      text-align: right;
+    }
+    .case-obs b { color: var(--fg-1); font-weight: 500; }
+
+    /* ---------- Footer ---------- */
+    .site-footer {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 64px 48px 32px;
+    }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 64px;
+      padding-bottom: 48px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .footer-brand .brand-name { font-size: 28px; }
+    .footer-brand .brand-dot { width: 6px; height: 6px; }
+    .footer-tag {
+      font-size: 14px;
+      color: var(--fg-2);
+      margin: 12px 0 0;
+    }
+    .footer-cols {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+    .footer-cols .eyebrow {
+      margin-bottom: 16px;
+      display: block;
+    }
+    .footer-cols a {
+      display: block;
+      font-size: 14px;
+      color: var(--fg-1);
+      text-decoration: none;
+      padding: 4px 0;
+    }
+    .footer-cols a:hover { color: var(--accent); }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 32px;
+    }
+    .seal {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .seal-mark {
+      width: 18px;
+      height: 18px;
+      border: 1.4px solid var(--accent);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      line-height: 1;
+      font-family: 'IBM Plex Sans', 'Hiragino Sans', sans-serif;
+      font-weight: 500;
+    }
+    .footer-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-3);
+      letter-spacing: 0.04em;
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 720px) {
+      .site-header { flex-direction: column; align-items: flex-start; padding: 24px; }
+      .hero { padding: 64px 24px 56px; }
+      .hero-title { font-size: 44px; }
+      .how { padding: 64px 24px; }
+      .how-grid { grid-template-columns: 1fr; }
+      .how-step { border-right: none; border-bottom: 1px solid var(--rule-soft); padding: 24px 0; }
+      .how-step:not(:first-child) { padding-left: 0; }
+      .why { grid-template-columns: 1fr; padding: 64px 24px; }
+      .footer-top { grid-template-columns: 1fr; }
+      .footer-cols { grid-template-columns: 1fr 1fr; }
+      .case-row { grid-template-columns: 1fr; gap: 4px; }
+      .case-obs { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+============================================================ -->
+<header class="site-header">
+  <a href="#" class="brand">
+    <span class="brand-name">Sifu</span><span class="brand-dot"></span>
+  </a>
+  <nav class="site-nav">
+    <a href="#how">How it works</a>
+    <a href="#why">Why it exists</a>
+    <a href="https://github.com/heymitch/sifu" class="mono-link">Github &#8599;</a>
+  </nav>
+</header>
+
+<!-- ============================================================
+     HERO
+     CTA: the give-to-agent prompt rendered in a <pre><code> block.
+     NOTE: the prompt text below is duplicated from
+     src/sifu/install/give-to-agent.md — v1 inlines it here for
+     zero dependencies. If that file changes, update this block too.
+============================================================ -->
+<section class="hero">
+  <div class="eyebrow">Workflow classifier &middot; Mac</div>
+  <h1 class="hero-title">Train your replacement.</h1>
+  <p class="hero-sub">
+    Sifu watches what you do, identifies the patterns, and teaches you
+    the system you didn't know you already had.
+  </p>
+
+  <div class="prompt-block">
+    <span class="prompt-label">Give this to your agent</span>
+    <pre class="prompt-pre"><code id="agent-prompt">Install Sifu locally so I can train my replacement.
+
+Platform: macOS only. Sifu uses CGEventTap and the macOS Accessibility
+API. It will not run on Linux or Windows.
+
+Steps:
+
+1. Clone or update:
+   If ~/sifu does not exist:
+     git clone https://github.com/heymitch/sifu.git ~/sifu
+   If ~/sifu already exists:
+     cd ~/sifu && git pull --ff-only
+
+2. Install:
+     pip install -e ~/sifu
+
+3. Run bootstrap and surface the result:
+     python3 -c "from sifu.install.bootstrap import run; print(run())"
+   Read the printed dict. Show the user the value of the "next" key.
+
+4. Accessibility permission:
+   Go to System Settings → Privacy & Security → Accessibility.
+   Add SifuBar and enable the toggle.
+   Sifu cannot capture input events without this. It must be granted
+   before capture begins.
+
+5. Report back:
+   · The "library" path printed by bootstrap
+   · The "next" step printed by bootstrap
+   · That Accessibility permission must be granted before starting
+
+Do not launch capture automatically. The user decides when observation
+begins.</code></pre>
+    <button class="copy-btn" onclick="copyPrompt()" id="copy-btn">Copy</button>
+  </div>
+
+  <div class="hero-meta">
+    <span><b>macOS</b> &middot; 12 Monterey or later</span>
+    <span class="meta-dot"></span>
+    <span>Python <b>3.10+</b></span>
+    <span class="meta-dot"></span>
+    <span>Open source</span>
+  </div>
+</section>
+
+<!-- ============================================================
+     WHAT IT DOES — three quiet steps
+============================================================ -->
+<section id="how" class="how">
+  <div class="eyebrow">How it works</div>
+  <h2 class="section-title">Three quiet steps.</h2>
+  <div class="how-grid">
+
+    <div class="how-step">
+      <div class="how-num">01</div>
+      <h3 class="how-verb">Watches</h3>
+      <p class="how-body">
+        Sifu sits beside you. It records the small repeated motions that
+        make up an hour of your work — clicks, opens, edits, sends.
+        Nothing leaves your machine.
+      </p>
+    </div>
+
+    <div class="how-step">
+      <div class="how-num">02</div>
+      <h3 class="how-verb">Classifies</h3>
+      <p class="how-body">
+        After enough observations, the pattern surfaces. Sifu names the
+        workflow, scores its confidence, and notes the exceptions.
+      </p>
+    </div>
+
+    <div class="how-step">
+      <div class="how-num">03</div>
+      <h3 class="how-verb">Teaches</h3>
+      <p class="how-body">
+        You receive a written report — the kind a careful teacher would
+        leave on your desk. The system you built without noticing,
+        written down.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     WHY THIS EXISTS — case-style block
+============================================================ -->
+<section id="why" class="why">
+  <div class="why-side">
+    <div class="eyebrow">Why this exists</div>
+    <h2 class="section-title">Workflows Sifu has classified.</h2>
+    <p class="why-sub">
+      Most work is a pattern you repeat without naming it.
+      Sifu names it. The report is yours to keep, edit, or delegate.
+    </p>
+  </div>
+
+  <ul class="case-list">
+    <li class="case-row">
+      <span class="case-id">Workflow &middot; 0042</span>
+      <span class="case-title">Ticket triage, Tuesday mornings</span>
+      <span class="case-obs"><b>312</b> obs</span>
+    </li>
+    <li class="case-row">
+      <span class="case-id">Workflow &middot; 0039</span>
+      <span class="case-title">Weekly status note from raw notes</span>
+      <span class="case-obs"><b>88</b> obs</span>
+    </li>
+    <li class="case-row">
+      <span class="case-id">Workflow &middot; 0035</span>
+      <span class="case-title">Invoice reconciliation, end of month</span>
+      <span class="case-obs"><b>24</b> obs</span>
+    </li>
+    <li class="case-row">
+      <span class="case-id">Workflow &middot; 0028</span>
+      <span class="case-title">Standup prep from yesterday's work</span>
+      <span class="case-obs"><b>156</b> obs</span>
+    </li>
+    <li class="case-row">
+      <span class="case-id">Workflow &middot; 0021</span>
+      <span class="case-title">Customer-call follow-up email</span>
+      <span class="case-obs"><b>71</b> obs</span>
+    </li>
+  </ul>
+</section>
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+<footer class="site-footer">
+  <div class="footer-top">
+    <div class="footer-brand">
+      <span class="brand-name">Sifu</span><span class="brand-dot"></span>
+      <p class="footer-tag">Workflow classifier. Calmly.</p>
+    </div>
+    <div class="footer-cols">
+      <div>
+        <div class="eyebrow">Product</div>
+        <a href="#how">How it works</a>
+        <a href="#why">Sample workflows</a>
+        <a href="https://github.com/heymitch/sifu">Github</a>
+      </div>
+      <div>
+        <div class="eyebrow">Install</div>
+        <a href="#hero">Give to your agent</a>
+        <a href="https://github.com/heymitch/sifu/blob/main/src/sifu/install/give-to-agent.md">Install prompt</a>
+      </div>
+      <div>
+        <div class="eyebrow">Project</div>
+        <a href="https://github.com/heymitch/sifu/blob/main/LICENSE">License</a>
+        <a href="https://github.com/heymitch/sifu/blob/main/CHANGELOG.md">Changelog</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="seal">
+      <span class="seal-mark">&#24107;</span>
+      Sifu
+    </span>
+    <span class="footer-meta">Open source &middot; macOS only &middot; v0.1</span>
+  </div>
+</footer>
+
+<script>
+  function copyPrompt() {
+    var text = document.getElementById('agent-prompt').textContent;
+    navigator.clipboard.writeText(text).then(function () {
+      var btn = document.getElementById('copy-btn');
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 2000);
+    }).catch(function () {
+      /* clipboard API unavailable — silently no-op */
+    });
+  }
+</script>
+
+</body>
+</html>
