@@ -1,7 +1,9 @@
 """Tests for the canonical workflow library + schema migration."""
 import sqlite3
+from pathlib import Path
 from sifu.storage.db import SCHEMA, migrate_db
 from sifu.events import Event, EventType
+from sifu import library
 
 FRAME_COLS = {"display_id", "display_bounds", "window_rect", "backing_scale", "url"}
 
@@ -42,3 +44,26 @@ def test_event_roundtrips_frame_fields():
     assert d["display_bounds"] == "[0,0,1920,1080]"
     assert e2.backing_scale == 2.0
     assert e2.window_rect == "[120,80,1280,800]"
+
+
+def test_unit_dir_and_write(tmp_path, monkeypatch):
+    monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+    u = library.unit_dir("wf-2026-05-19-001")
+    assert u == tmp_path / "library" / "wf-2026-05-19-001"
+    library.write_unit(
+        "wf-2026-05-19-001",
+        workflow_md="# I see you do this.\n",
+        macro={"schema_version": 1, "workflow_id": "wf-2026-05-19-001", "steps": []},
+        meta={"id": "wf-2026-05-19-001", "step_count": 0},
+        screenshots=[],
+    )
+    assert (u / "workflow.md").read_text().startswith("# I see")
+    assert '"schema_version": 1' in (u / "macro.json").read_text()
+    assert (u / "meta.json").exists()
+
+def test_list_units(tmp_path, monkeypatch):
+    monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+    library.write_unit("wf-a", "# a", {"schema_version":1,"workflow_id":"wf-a","steps":[]}, {"id":"wf-a"}, [])
+    library.write_unit("wf-b", "# b", {"schema_version":1,"workflow_id":"wf-b","steps":[]}, {"id":"wf-b"}, [])
+    ids = sorted(library.list_units())
+    assert ids == ["wf-a", "wf-b"]

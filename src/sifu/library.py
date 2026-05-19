@@ -1,0 +1,49 @@
+"""Canonical workflow library — one self-contained dir per workflow."""
+
+import json
+import shutil
+from pathlib import Path
+from typing import Optional
+
+LIBRARY_DIR = Path.home() / ".sifu" / "library"
+
+
+def unit_dir(workflow_id: str) -> Path:
+    return LIBRARY_DIR / workflow_id
+
+
+def write_unit(workflow_id: str, workflow_md: str, macro: dict,
+               meta: dict, screenshots: list[Path]) -> Path:
+    """Write a complete library unit. Overwrites an existing unit atomically-ish."""
+    d = unit_dir(workflow_id)
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "workflow.md").write_text(workflow_md, encoding="utf-8")
+    (d / "macro.json").write_text(json.dumps(macro, indent=2), encoding="utf-8")
+    (d / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    shots = d / "screenshots"
+    shots.mkdir(exist_ok=True)
+    for i, src in enumerate(screenshots):
+        src = Path(src)
+        if src.exists():
+            shutil.copy2(src, shots / f"{i:03d}{src.suffix or '.jpg'}")
+    return d
+
+
+def list_units() -> list[str]:
+    if not LIBRARY_DIR.exists():
+        return []
+    return [p.name for p in LIBRARY_DIR.iterdir()
+            if p.is_dir() and (p / "macro.json").exists()]
+
+
+def read_unit(workflow_id: str) -> Optional[dict]:
+    d = unit_dir(workflow_id)
+    if not (d / "macro.json").exists():
+        return None
+    return {
+        "id": workflow_id,
+        "dir": str(d),
+        "workflow_md": (d / "workflow.md").read_text(encoding="utf-8") if (d / "workflow.md").exists() else "",
+        "macro": json.loads((d / "macro.json").read_text(encoding="utf-8")),
+        "meta": json.loads((d / "meta.json").read_text(encoding="utf-8")) if (d / "meta.json").exists() else {},
+    }
