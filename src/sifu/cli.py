@@ -87,6 +87,17 @@ def replay_cmd_cli(dry, workflow_id):
     replay_cli(workflow_id)
 
 
+@main.command(name="ui")
+@click.option("--port", default=8765, help="Port (default 8765).")
+@click.option("--no-open", is_flag=True, help="Do not open a browser.")
+def ui_cmd_cli(port, no_open):
+    """Start the read-only library browser."""
+    import webbrowser, uvicorn
+    if not no_open:
+        webbrowser.open(f"http://localhost:{port}")
+    uvicorn.run("sifu_ui.app:app", host="127.0.0.1", port=port)
+
+
 @main.command()
 @click.option("--today", is_flag=True, help="Today only.")
 @click.option("--app", help="Filter by application.")
