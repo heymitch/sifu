@@ -27,7 +27,7 @@ Pure and deterministic — rows in, dict out. No I/O, no LLM calls.
 | Field | Type | Notes |
 |---|---|---|
 | `schema_version` | `1` (integer literal) | Always `1` for this version. |
-| `workflow_id` | string | Opaque identifier supplied by the caller. |
+| `workflow_id` | string | Opaque identifier supplied by the caller. Treat it as an opaque string; no format, length bound, or character set is guaranteed — the `wf-…` values in examples are illustrative, not a contract. |
 | `steps` | array | Ordered list of step objects, one per recorded event. |
 
 ---
@@ -113,7 +113,7 @@ URL of the browser page at the time of the event. `null` for non-browser steps. 
 
 ### `screenshot`
 
-Path to the screenshot captured at the time of the event, formatted as `screenshots/NNN.jpg` where `NNN` is the zero-padded three-digit index. `null` when no screenshot was recorded.
+Path to the screenshot captured at the time of the event, formatted as `screenshots/NNN.jpg` where `NNN` is always exactly 3 digits, zero-padded (e.g. `screenshots/007.jpg`). `null` when no screenshot was recorded.
 
 ### `text`
 
@@ -134,13 +134,17 @@ A post-condition that NavMacro checks after executing the step. Inferred from th
 
 Priority: if the next step has a `url`, `expected` is `{ "kind": "url", … }`. Otherwise, if the next step has a `window` title, `expected` is `{ "kind": "window_title", … }`. If neither is present, or if there is no next step, `expected` is `null`.
 
+Look-ahead applies uniformly to every step: each step's `expected` is inferred from the immediately following step. Only the final step has no following step and therefore always has `expected: null`. There is no backward or previous-step inference for any step, including step 0.
+
 ---
 
 ## Failure-loop contract
 
-NavMacro fires `coords` deterministically on each step. After executing a step it compares the observed state against `expected`. On a mismatch it enters vision repair: the vision model identifies the correct target coordinates and **rewrites `coords` in `macro.json` in place**, then execution continues from the corrected position.
+NavMacro fires `coords` deterministically on each step. After executing a step it compares the observed state against `expected`. On a mismatch it enters vision repair: the vision model identifies the correct target coordinates and **rewrites `coords` in `macro.json` in place**, then execution continues from the corrected position. When NavMacro performs a vision repair, only `coords` is overwritten in `macro.json`; all other fields (`expected`, `screenshot`, `frame`, `url`, `text`, `key`, `action`, `index`) are immutable and must not be rewritten.
 
 Vision is cold-path only. The design rationale: keeping vision out of the happy path preserves context-window budget for the cases that need it. A macro that runs cleanly never touches the vision model.
+
+If vision repair itself fails, the behavior is NavMacro's decision; Sifu does not specify a fallback and does not document one elsewhere.
 
 ---
 
