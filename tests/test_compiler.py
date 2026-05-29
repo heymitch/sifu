@@ -55,45 +55,9 @@ class TestCompiler:
             insert_event(self.conn, e)
         return events
 
-    def test_build_prompt_contains_events(self):
-        from sifu.compiler.sop import _build_prompt
-
-        self._insert_workflow_events()
-        rows = self.conn.execute(
-            "SELECT * FROM events ORDER BY timestamp"
-        ).fetchall()
-
-        prompt = _build_prompt(rows)
-        assert "Chrome" in prompt
-        assert "python tutorial" in prompt
-        assert "click" in prompt.lower() or "Click" in prompt
-
-    def test_add_screenshot_refs_no_screenshots(self):
-        from sifu.compiler.sop import _add_screenshot_refs
-
-        self._insert_workflow_events()
-        rows = self.conn.execute("SELECT * FROM events").fetchall()
-
-        result = _add_screenshot_refs("# Test SOP", rows)
-        # No screenshots → content unchanged
-        assert result == "# Test SOP"
-
-    def test_add_screenshot_refs_with_screenshots(self):
-        from sifu.compiler.sop import _add_screenshot_refs
-
-        e = Event(
-            type=EventType.CLICK,
-            app="Chrome",
-            screenshot_path="/tmp/shot.jpg",
-            workflow_id="wf-test",
-            session_id="s1",
-        )
-        insert_event(self.conn, e)
-        rows = self.conn.execute("SELECT * FROM events").fetchall()
-
-        result = _add_screenshot_refs("# Test SOP", rows)
-        assert "/tmp/shot.jpg" in result
-        assert "Screenshots" in result
+    # NOTE: tests for _build_prompt / _add_screenshot_refs were removed — SOP
+    # generation now delegates to the Claude CLI (compile_single), so those
+    # internal helpers no longer exist.
 
     def test_compile_single_calls_claude(self, tmp_path, monkeypatch):
         from sifu import library

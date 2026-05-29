@@ -192,45 +192,6 @@ class TestDisk:
         assert ".sifu/screenshots/" in str(path)
 
 
-# ── Screenshot dedup tests ───────────────────────────────
-
-
-class TestScreenshotDedup:
-    def test_skips_text_input(self):
-        from sifu.capture.screenshots import ScreenshotCapture
-
-        sc = ScreenshotCapture({"screenshot_min_interval_s": 2.0})
-        e = Event(type=EventType.TEXT_INPUT, app="Chrome")
-        assert sc._should_capture(e) is False
-
-    def test_allows_first_click(self):
-        from sifu.capture.screenshots import ScreenshotCapture
-
-        sc = ScreenshotCapture({"screenshot_min_interval_s": 2.0})
-        e = Event(type=EventType.CLICK, app="Chrome", window="Tab 1")
-        assert sc._should_capture(e) is True
-
-    def test_dedup_same_app_window(self):
-        from sifu.capture.screenshots import ScreenshotCapture
-
-        sc = ScreenshotCapture({"screenshot_min_interval_s": 2.0})
-        e = Event(type=EventType.CLICK, app="Chrome", window="Tab 1")
-
-        # Simulate a recent capture
-        sc._last_app = "Chrome"
-        sc._last_window = "Tab 1"
-        sc._last_time = time.time()
-
-        assert sc._should_capture(e) is False
-
-    def test_allows_different_window(self):
-        from sifu.capture.screenshots import ScreenshotCapture
-
-        sc = ScreenshotCapture({"screenshot_min_interval_s": 2.0})
-        e = Event(type=EventType.CLICK, app="Chrome", window="Tab 2")
-
-        sc._last_app = "Chrome"
-        sc._last_window = "Tab 1"
-        sc._last_time = time.time()
-
-        assert sc._should_capture(e) is True
+# NOTE: TestScreenshotDedup was removed — screenshot dedup/throttle now lives
+# in the Swift SifuBar capture engine (captureIfNeeded), not a Python
+# ScreenshotCapture class, so sifu.capture.screenshots no longer exists.
