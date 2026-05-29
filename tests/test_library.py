@@ -117,3 +117,23 @@ class TestRemoveUnit:
     def test_missing_returns_false(self, tmp_path, monkeypatch):
         monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
         assert library.remove_unit("wf-does-not-exist") is False
+
+
+class TestLatestUnit:
+    def _unit(self, wid, captured_at):
+        import json
+        d = library.unit_dir(wid)
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "macro.json").write_text(json.dumps({"schema_version": 1, "steps": []}), encoding="utf-8")
+        (d / "meta.json").write_text(json.dumps({"id": wid, "captured_at": captured_at}), encoding="utf-8")
+
+    def test_returns_most_recent_by_captured_at(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+        self._unit("wf-old", "2026-05-01T10:00:00")
+        self._unit("wf-new", "2026-05-28T15:00:00")
+        self._unit("wf-mid", "2026-05-14T09:00:00")
+        assert library.latest_unit() == "wf-new"
+
+    def test_none_when_empty(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+        assert library.latest_unit() is None

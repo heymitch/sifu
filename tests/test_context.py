@@ -65,6 +65,36 @@ def test_render_context_returns_none_on_no_match(tmp_path, monkeypatch):
     assert context_cmd.render_context("nothing-matches-zzz-xyz") is None
 
 
+def test_output_leads_with_skill_directive(tmp_path, monkeypatch):
+    """Pasted blob should read as a command (init-style), not a passive dump."""
+    _seed(tmp_path, monkeypatch)
+    out = context_cmd.render_context("deploy")
+    assert "agent skill" in out.lower()
+    # directive sits at the very top, before the masthead
+    assert out.index("agent skill") < out.index("SIFU RECORDING")
+
+
+def test_render_latest_picks_newest_unit(tmp_path, monkeypatch):
+    _seed(tmp_path, monkeypatch)
+    # wf-email-001 carries no captured_at; give the others none too, then add a
+    # newest one to assert selection by captured_at.
+    library.write_unit(
+        "wf-latest-001", "# The newest thing\nDo it.",
+        {"schema_version": 1, "workflow_id": "wf-latest-001", "steps": []},
+        {"id": "wf-latest-001", "app_set": ["Kit"], "captured_at": "2099-01-01T00:00:00"},
+        [],
+    )
+    out = context_cmd.render_latest()
+    assert out is not None
+    assert "wf-latest-001" in out
+    assert "# The newest thing" in out
+
+
+def test_render_latest_none_when_empty(tmp_path, monkeypatch):
+    monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+    assert context_cmd.render_latest() is None
+
+
 def test_bootstrap_creates_library(tmp_path, monkeypatch):
     from sifu.install import bootstrap
     monkeypatch.setattr(bootstrap.library, "LIBRARY_DIR", tmp_path / "library")

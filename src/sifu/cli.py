@@ -76,6 +76,14 @@ def context_cmd_cli(query):
     context_cli(" ".join(query))
 
 
+@main.command(name="copy-last")
+def copy_last_cli():
+    """Copy the most recent workflow + skill-building instructions to the clipboard."""
+    from sifu.context_cmd import copy_last
+
+    copy_last()
+
+
 @main.command(name="replay")
 @click.option("--dry-run", "dry", is_flag=True, default=True,
               help="Validate the macro contract (only mode in v1).")

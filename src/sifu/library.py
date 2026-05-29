@@ -67,6 +67,19 @@ def remove_unit(workflow_id: str) -> bool:
     return False
 
 
+def latest_unit() -> Optional[str]:
+    """Most recently captured library unit (by meta `captured_at`, then id).
+    Used by 'Copy Last Workflow' — what the user just recorded."""
+    best, best_key = None, None
+    for wid in list_units():
+        u = read_unit(wid)
+        captured_at = (u or {}).get("meta", {}).get("captured_at", "") or ""
+        key = (captured_at, wid)
+        if best_key is None or key > best_key:
+            best, best_key = wid, key
+    return best
+
+
 def read_unit(workflow_id: str) -> Optional[dict]:
     d = unit_dir(workflow_id)
     if not (d / "macro.json").exists():

@@ -120,15 +120,24 @@ def _masthead(wid: str, meta: dict) -> str:
     return f"{head}\n{'  ·  '.join(bits)}" if bits else head
 
 
-def render_context(query: str):
-    wid = best_match(query)
-    if wid is None:
-        return None
+# Init-style directive at the very top, so a pasted blob reads as a command —
+# the agent knows immediately what to do with what follows.
+_DIRECTIVE = (
+    "Turn this recorded workflow into an agent skill. Read it below (full "
+    "structured detail + screenshots are at the paths given), then follow the "
+    '"What to do with this" instructions at the end to build an installable '
+    "skill.\n"
+)
+
+
+def render_unit(wid: str):
+    """Render one library unit as the full copy-to-agent briefing."""
     u = library.read_unit(wid)
     if u is None:
         return None
     d = library.unit_dir(wid)
     return (
+        f"{_DIRECTIVE}\n"
         f"{_masthead(wid, u.get('meta', {}))}\n\n"
         f"## The recorded flow\n\n{u['workflow_md']}\n\n"
         f"## Evidence (structured detail + per-step screenshots)\n"
@@ -138,6 +147,17 @@ def render_context(query: str):
     )
 
 
+def render_context(query: str):
+    wid = best_match(query)
+    return render_unit(wid) if wid else None
+
+
+def render_latest():
+    """Briefing for the most recently recorded workflow (Copy Last Workflow)."""
+    wid = library.latest_unit()
+    return render_unit(wid) if wid else None
+
+
 def context_cli(query: str) -> None:
     import click
     out = render_context(query)
@@ -145,3 +165,24 @@ def context_cli(query: str) -> None:
         click.echo(f"No matching workflow for: {query!r}")
         return
     click.echo(out)
+
+
+def copy_last() -> None:
+    """Copy the most recent workflow's briefing to the macOS clipboard."""
+    import subprocess
+    import click
+
+    out = render_latest()
+    if out is None:
+        click.echo("No workflows yet — record one, then Stop + Analyze.")
+        return
+    try:
+        subprocess.run(["pbcopy"], input=out.encode("utf-8"), check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        # pbcopy unavailable (non-macOS) — print so the user can copy manually.
+        click.echo(out)
+        return
+    click.echo(
+        f"Copied {library.latest_unit()} + skill-building instructions to the "
+        "clipboard. Paste it into your agent (Claude Code, etc.)."
+    )
