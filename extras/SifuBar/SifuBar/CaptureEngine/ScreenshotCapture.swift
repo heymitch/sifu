@@ -57,7 +57,8 @@ final class ScreenshotCapture {
             []
         ) else { return nil }
 
-        let bitmap = NSBitmapImageRep(cgImage: image)
+        let scaled = downscaled(image, maxWidth: config.screenshotMaxWidth)
+        let bitmap = NSBitmapImageRep(cgImage: scaled)
         let quality = CGFloat(config.screenshotQuality) / 100.0
         guard let jpegData = bitmap.representation(
             using: .jpeg,
@@ -74,6 +75,25 @@ final class ScreenshotCapture {
         } catch {
             return nil
         }
+    }
+
+    /// Downscale to `maxWidth` px (preserving aspect). maxWidth <= 0, or an
+    /// image already narrower, returns the original — so screenshot_max_width=0
+    /// restores full-resolution capture. Screenshots are for layout legibility,
+    /// not pixel fidelity, so a width cap cuts ~70% of bytes with no real loss.
+    private func downscaled(_ image: CGImage, maxWidth: Int) -> CGImage {
+        guard maxWidth > 0, image.width > maxWidth else { return image }
+        let w = maxWidth
+        let h = Int((Double(image.height) * Double(maxWidth) / Double(image.width)).rounded())
+        guard h > 0 else { return image }
+        let colorSpace = image.colorSpace ?? CGColorSpaceCreateDeviceRGB()
+        guard let ctx = CGContext(
+            data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+            space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return image }
+        ctx.interpolationQuality = .medium
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+        return ctx.makeImage() ?? image
     }
 
     // MARK: - Path generation (matches Python disk.py)

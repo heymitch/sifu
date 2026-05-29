@@ -4,6 +4,7 @@ struct SifuConfig {
     let screenshotBudgetMB: Int
     let screenshotMinIntervalS: Double
     let screenshotQuality: Int
+    let screenshotMaxWidth: Int   // downscale cap in px; 0 = full resolution
     let idleTimeoutS: Int
     let sessionGapS: Int
     let ignoreApps: Set<String>
@@ -32,9 +33,10 @@ struct SifuConfig {
         }
 
         return SifuConfig(
-            screenshotBudgetMB: raw["screenshot_budget_mb"] as? Int ?? 1024,
+            screenshotBudgetMB: raw["screenshot_budget_mb"] as? Int ?? 256,
             screenshotMinIntervalS: raw["screenshot_min_interval_s"] as? Double ?? 2.0,
-            screenshotQuality: raw["screenshot_quality"] as? Int ?? 80,
+            screenshotQuality: raw["screenshot_quality"] as? Int ?? 70,
+            screenshotMaxWidth: raw["screenshot_max_width"] as? Int ?? 1600,
             idleTimeoutS: raw["idle_timeout_s"] as? Int ?? 300,
             sessionGapS: raw["session_gap_s"] as? Int ?? 30,
             ignoreApps: Set((raw["ignore_apps"] as? [String]) ?? Array(defaultIgnoreApps)),
