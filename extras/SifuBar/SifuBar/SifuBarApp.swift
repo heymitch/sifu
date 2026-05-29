@@ -308,6 +308,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Quick actions
         for (title, sel) in [
+            ("\u{1F4E4} Copy Last Workflow", #selector(copyLastSifu)),
             ("\u{1F4CB} Compile SOPs", #selector(compileSifu)),
             ("\u{1F3AF} Coach Report", #selector(coachSifu)),
             ("\u{1F4CA} Show Patterns", #selector(patternsSifu)),
@@ -392,6 +393,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func patternsSifu() { runSifuWithLayer("patterns --today", layer: "patterns") }
     @objc private func logSifu() { runSifu("log --last 1h") }
     @objc private func configSifu() { runSifu("config") }
+
+    @objc private func copyLastSifu() {
+        // `sifu copy-last` writes the most recent workflow + skill-building
+        // instructions to the clipboard; flash the menu bar to confirm.
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.runSifuSync("copy-last")
+            DispatchQueue.main.async { self?.flashStatus("\u{2705} Copied") }
+        }
+    }
+
+    private func flashStatus(_ text: String) {
+        guard let button = statusItem?.button else { return }
+        button.title = text
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { [weak self] in
+            self?.updateMenu()  // restores the normal status glyph
+        }
+    }
 
     private func runSifuWithLayer(_ subcommand: String, layer: String) {
         workingLayer = layer
