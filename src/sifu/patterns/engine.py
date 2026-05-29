@@ -17,7 +17,11 @@ PATTERNS_DIR = Path.home() / ".sifu" / "output" / "patterns"
 
 APP_SWITCH_GAP = 30   # seconds: app switch + gap > this → new segment
 IDLE_GAP = 300        # seconds: gap >= this → session boundary
-MAX_SEGMENT_SIZE = 80 # events: segments larger than this get split at app_switch boundaries
+MAX_SEGMENT_SIZE = 250 # events: cap before splitting at app_switch boundaries.
+                       # Sized to keep a coherent focused workflow whole (e.g. a
+                       # ~160-event email-authoring flow) instead of chopping it into
+                       # arbitrary chunks. Long sessions still split; 5-min idle gaps
+                       # already mark session boundaries.
 
 
 # ── Public API ───────────────────────────────────────────────────────────────
@@ -235,6 +239,7 @@ def _make_segment(events: list, counter: int) -> dict:
         "workflow_id": workflow_id,
         "title": _generate_title(events),
         "app": _primary_app(events),
+        "source_session": _get(events[0], "session_id"),
         "event_ids": [_get(e, "id") for e in events if _get(e, "id") is not None],
         "event_count": len(events),
         "start_time": _get(events[0], "timestamp") or "",
@@ -250,11 +255,12 @@ def _split_large_segment(seg: dict, all_events: list, counter: list) -> list[dic
 
     Falls back to fixed-size splits if no app_switch boundaries exist.
     """
-    from sifu.storage.db import get_connection, get_events_by_workflow
-
-    conn = get_connection()
-    events = get_events_by_workflow(conn, seg["workflow_id"])
-    conn.close()
+    # Use the segment's OWN in-memory events (identified by event_ids), NOT a
+    # DB lookup by workflow_id: at this point the workflow_id has not been
+    # written to the DB yet, so a lookup returns STALE events from a prior run
+    # that reused the same auto-generated id.
+    id_set = set(seg["event_ids"])
+    events = [e for e in all_events if _get(e, "id") in id_set]
 
     if not events:
         return [seg]

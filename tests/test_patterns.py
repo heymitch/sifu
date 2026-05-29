@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from sifu.patterns.engine import segment_workflows
+from sifu.patterns.engine import segment_workflows, MAX_SEGMENT_SIZE
 
 
 def _make_event(type, app, timestamp_str, text_content=None, shortcut=None, id=None):
@@ -127,3 +127,41 @@ class TestSegmentation:
         ]
         segments = segment_workflows(events)
         assert len(segments) == 3
+
+
+class TestLargeSegmentSplitting:
+    def test_split_partitions_input_exactly(self):
+        """A segment larger than MAX_SEGMENT_SIZE splits using its OWN
+        in-memory events. Every output id comes from the input — none lost,
+        none duplicated, and no stale ids leak in from a DB lookup (Bug B)."""
+        base = datetime(2026, 3, 31, 10, 0, 0)
+        n = MAX_SEGMENT_SIZE + 60
+        # Distinct id range so any stale/foreign ids from the DB stand out.
+        events = [
+            _make_event("click", "Chrome",
+                        (base + timedelta(seconds=i)).isoformat(), id=1000 + i)
+            for i in range(n)
+        ]
+        input_ids = {1000 + i for i in range(n)}
+        segments = segment_workflows(events)
+
+        out_ids = [eid for seg in segments for eid in seg["event_ids"]]
+        assert set(out_ids) == input_ids          # no foreign/stale ids, nothing lost
+        assert len(out_ids) == len(input_ids)      # no duplicates across segments
+        assert sum(s["event_count"] for s in segments) == n
+
+    def test_coherent_fluid_session_not_chopped(self):
+        """A coherent multi-app workflow with rapid (sub-threshold) app
+        switches stays as ONE segment — not arbitrarily chopped by the size
+        cap. Mirrors real fluid multi-app work (writing an email while
+        cross-referencing Notion/Fathom for a URL)."""
+        base = datetime(2026, 3, 31, 10, 0, 0)
+        apps = ["Brave Browser", "Notion", "Fathom"]
+        events = [
+            _make_event("click", apps[i % len(apps)],
+                        (base + timedelta(seconds=i)).isoformat(), id=i + 1)
+            for i in range(150)   # 1s gaps: under both APP_SWITCH_GAP and IDLE_GAP
+        ]
+        segments = segment_workflows(events)
+        assert len(segments) == 1
+        assert segments[0]["event_count"] == 150

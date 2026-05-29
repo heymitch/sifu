@@ -78,3 +78,42 @@ def test_write_unit_overwrite_clears_stale_screenshots(tmp_path, monkeypatch):
     # overwrite with ONE screenshot — stale 001.jpg must be gone
     library.write_unit("wf-ov", "# v2", {"schema_version":1,"workflow_id":"wf-ov","steps":[]}, {"id":"wf-ov"}, [s1])
     assert sorted(p.name for p in shots.iterdir()) == ["000.jpg"]
+
+
+def _make_unit(session_id: str, workflow_id: str):
+    """Create a minimal on-disk library unit for `workflow_id`."""
+    import json
+    d = library.unit_dir(workflow_id)
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "macro.json").write_text(json.dumps({"schema_version": 1, "steps": []}), encoding="utf-8")
+    (d / "meta.json").write_text(
+        json.dumps({"id": workflow_id, "source_session": session_id}), encoding="utf-8"
+    )
+    return d
+
+
+class TestUnitsForSession:
+    def test_filters_by_source_session(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+        _make_unit("session-A", "wf-2026-05-28-001")
+        _make_unit("session-A", "wf-2026-05-28-002")
+        _make_unit("session-B", "wf-2026-05-28-003")
+        ids = library.units_for_session("session-A")
+        assert set(ids) == {"wf-2026-05-28-001", "wf-2026-05-28-002"}
+
+    def test_empty_when_no_match(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+        _make_unit("session-A", "wf-2026-05-28-001")
+        assert library.units_for_session("session-Z") == []
+
+
+class TestRemoveUnit:
+    def test_removes_existing_returns_true(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+        _make_unit("session-A", "wf-2026-05-28-001")
+        assert library.remove_unit("wf-2026-05-28-001") is True
+        assert "wf-2026-05-28-001" not in library.list_units()
+
+    def test_missing_returns_false(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+        assert library.remove_unit("wf-does-not-exist") is False

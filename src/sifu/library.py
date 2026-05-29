@@ -42,6 +42,31 @@ def list_units() -> list[str]:
             if p.is_dir() and (p / "macro.json").exists()]
 
 
+def units_for_session(session_id: str) -> list[str]:
+    """Library unit ids whose meta.json `source_session` matches `session_id`."""
+    result = []
+    for wf_id in list_units():
+        meta_path = unit_dir(wf_id) / "meta.json"
+        if not meta_path.exists():
+            continue
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        if meta.get("source_session") == session_id:
+            result.append(wf_id)
+    return result
+
+
+def remove_unit(workflow_id: str) -> bool:
+    """Delete a library unit directory. Returns True if it existed."""
+    d = unit_dir(workflow_id)
+    if d.exists() and d.is_dir():
+        shutil.rmtree(d)
+        return True
+    return False
+
+
 def read_unit(workflow_id: str) -> Optional[dict]:
     d = unit_dir(workflow_id)
     if not (d / "macro.json").exists():

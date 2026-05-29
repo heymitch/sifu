@@ -143,7 +143,13 @@ def _get_compiled_ids() -> set:
 
 
 def _compile_uncompiled(today_only: bool = False) -> None:
-    """Find uncompiled workflow segments and compile each one."""
+    """Find workflow segments and compile each one.
+
+    Idempotent per session: before compiling, prior library units from any
+    session being (re)compiled are purged, so re-running replaces a session's
+    units instead of accumulating orphans. (Workflow ids are position-based
+    and differ run-to-run, so a plain id check cannot dedupe.)
+    """
     import click
 
     try:
@@ -153,27 +159,21 @@ def _compile_uncompiled(today_only: bool = False) -> None:
         return
 
     segments = detect_patterns()
-    compiled = _get_compiled_ids()
-
     if not segments:
         click.echo("No workflow segments found.")
         return
 
-    compiled_count = 0
-    compiled_paths = []
+    # Decide what to compile: today filter + noise skips (echo what we skip).
+    to_compile = []
     for seg in segments:
         wf_id = seg.get("workflow_id")
         if not wf_id:
-            continue
-        if wf_id in compiled:
             continue
         if today_only:
             from datetime import datetime
             today_str = datetime.now().strftime("%Y-%m-%d")
             if today_str not in seg.get("start_time", ""):
                 continue
-
-        # Skip noise: segments that are all window_switch or < 3 meaningful events
         types = seg.get("types", [])
         event_count = seg.get("event_count", 0)
         meaningful_types = [t for t in types if t != "window_switch"]
@@ -183,7 +183,18 @@ def _compile_uncompiled(today_only: bool = False) -> None:
         if event_count < 3:
             click.echo(f"  Skipping {wf_id} ({event_count} events — too short)")
             continue
+        to_compile.append(seg)
 
+    # Idempotency: replace prior units for every session we're about to recompile.
+    for sess in {s.get("source_session") for s in to_compile if s.get("source_session")}:
+        for old_id in library.units_for_session(sess):
+            library.remove_unit(old_id)
+            click.echo(f"  Replaced prior unit {old_id} (session {sess})")
+
+    compiled_count = 0
+    compiled_paths = []
+    for seg in to_compile:
+        wf_id = seg["workflow_id"]
         click.echo(f"  Compiling {wf_id}...")
         try:
             path = compile_single(wf_id)
