@@ -27,22 +27,10 @@ private let keycodeTable: [UInt16: String] = [
     123: "LeftArrow", 124: "RightArrow", 125: "DownArrow", 126: "UpArrow",
 ]
 
-private let shiftMap: [Character: Character] = [
-    "1": "!", "2": "@", "3": "#", "4": "$", "5": "%",
-    "6": "^", "7": "&", "8": "*", "9": "(", "0": ")",
-    "-": "_", "=": "+", "[": "{", "]": "}", "\\": "|",
-    ";": ":", "'": "\"", ",": "<", ".": ">", "/": "?", "`": "~",
-]
-
-private let nonPrintableKeys: Set<String> = [
-    "Return", "Tab", "Delete", "ForwardDelete", "Escape",
-    "Command", "Shift", "CapsLock", "Option", "Control",
-    "RightShift", "RightOption", "RightControl", "Function",
-    "LeftArrow", "RightArrow", "UpArrow", "DownArrow",
-    "Home", "End", "PageUp", "PageDown",
-    "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8",
-    "F9", "F10", "F11", "F12", "F13", "F14", "F15",
-]
+// NOTE: keycodeTable above is retained ONLY for naming non-printable keys in
+// shortcuts (arrows, F-keys — these are layout-independent physical keys).
+// Printable characters are resolved live from the OS via the active keyboard
+// layout in resolvedCharacter(from:), never from a hardcoded QWERTY table.
 
 private let modifierKeycodes: Set<UInt16> = [55, 56, 57, 58, 59, 60, 61, 62, 63]
 private let keycodeReturn: UInt16 = 36
@@ -207,8 +195,9 @@ final class EventTapManager {
             return
         }
 
-        // Map keycode to character
-        if let char = keycodeToChar(keycode: keycode, shiftHeld: flags.contains(.maskShift)) {
+        // Resolve the character from the OS using the active keyboard layout
+        // (Colemak/Dvorak/QWERTY/international) — never a hardcoded table.
+        if let char = resolvedCharacter(from: event) {
             textAggregator.accumulate(char)
         }
     }
@@ -274,19 +263,22 @@ final class EventTapManager {
         onEvent?(captured)
     }
 
-    // MARK: - Keycode mapping
+    // MARK: - Layout-aware character resolution
 
-    private func keycodeToChar(keycode: UInt16, shiftHeld: Bool) -> Character? {
-        guard let name = keycodeTable[keycode] else { return nil }
-        if nonPrintableKeys.contains(name) { return nil }
-        if name == "Space" { return " " }
-
-        guard name.count == 1, let base = name.first else { return nil }
-
-        if shiftHeld {
-            return shiftMap[base] ?? Character(base.uppercased())
-        }
-        return base
+    /// The character this keypress actually produced under the user's active
+    /// keyboard layout. Reads the resolved Unicode from the OS event instead of
+    /// a hardcoded QWERTY table, so Colemak/Dvorak/international input is logged
+    /// as what the user actually typed. Returns nil for control and function keys.
+    private func resolvedCharacter(from event: CGEvent) -> Character? {
+        var length = 0
+        var chars = [UniChar](repeating: 0, count: 4)
+        event.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: &chars)
+        guard length > 0,
+              let ch = String(utf16CodeUnits: chars, count: length).first,
+              let scalar = ch.unicodeScalars.first else { return nil }
+        if scalar.value < 0x20 { return nil }                       // control chars
+        if (0xF700...0xF8FF).contains(scalar.value) { return nil }  // arrows, F-keys, etc.
+        return ch
     }
 
     // MARK: - Accessibility helpers
