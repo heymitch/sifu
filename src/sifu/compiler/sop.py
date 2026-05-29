@@ -142,6 +142,20 @@ def _get_compiled_ids() -> set:
     return set(library.list_units())
 
 
+def _filter_to_latest_day(segments: list) -> list:
+    """Segments from the most recent capture day present.
+
+    '--today' means "the latest day you actually recorded", not the wall-clock
+    date — so a session captured before midnight still compiles the next
+    morning instead of silently matching nothing.
+    """
+    dates = [str(s.get("start_time", ""))[:10] for s in segments if s.get("start_time")]
+    if not dates:
+        return []
+    latest = max(dates)
+    return [s for s in segments if str(s.get("start_time", ""))[:10] == latest]
+
+
 def _compile_uncompiled(today_only: bool = False) -> None:
     """Find workflow segments and compile each one.
 
@@ -163,17 +177,15 @@ def _compile_uncompiled(today_only: bool = False) -> None:
         click.echo("No workflow segments found.")
         return
 
-    # Decide what to compile: today filter + noise skips (echo what we skip).
+    if today_only:
+        segments = _filter_to_latest_day(segments)
+
+    # Decide what to compile: noise skips (echo what we skip).
     to_compile = []
     for seg in segments:
         wf_id = seg.get("workflow_id")
         if not wf_id:
             continue
-        if today_only:
-            from datetime import datetime
-            today_str = datetime.now().strftime("%Y-%m-%d")
-            if today_str not in seg.get("start_time", ""):
-                continue
         types = seg.get("types", [])
         event_count = seg.get("event_count", 0)
         meaningful_types = [t for t in types if t != "window_switch"]
