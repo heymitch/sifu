@@ -24,5 +24,7 @@
     <string>Sifu needs Accessibility access to track your workflow — clicks, keystrokes, and app switches. All data stays 100% local on your machine.</string>
     <key>NSScreenCaptureUsageDescription</key>
     <string>Sifu needs Screen Recording access to capture screenshots of your workflow. All data stays 100% local on your machine.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Sifu reads the active tab's URL from your browser so recorded web steps can be replayed and turned into skills. All data stays 100% local on your machine.</string>
 </dict>
 </plist>

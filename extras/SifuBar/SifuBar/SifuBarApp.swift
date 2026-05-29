@@ -84,7 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let sessionId = self.sessionManager.sessionId
 
             let frame = EventTapManager.getFrameSnapshot()
-            let url = AppTracker.currentBrowserURL(appName: captured.app)
+            let url = self.appTracker.currentURL(for: captured.app)
 
             let eventId = self.eventStore.insertEvent(
                 timestamp: SessionManager.isoNow(),
@@ -131,7 +131,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
 
             let frame = EventTapManager.getFrameSnapshot()
-            let url = AppTracker.currentBrowserURL(appName: app)
+            let url = self.appTracker.currentURL(for: app)
 
             let eventId = self.eventStore.insertEvent(
                 timestamp: SessionManager.isoNow(),

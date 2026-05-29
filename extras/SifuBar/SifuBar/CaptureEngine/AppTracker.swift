@@ -19,18 +19,63 @@ final class AppTracker {
 
     static let browserApps: Set<String> = ["Google Chrome", "Safari", "Arc", "Microsoft Edge", "Brave Browser"]
 
-    static func currentBrowserURL(appName: String?) -> String? {
-        guard let appName = appName, browserApps.contains(appName) else { return nil }
-        guard let app = NSWorkspace.shared.frontmostApplication else { return nil }
-        let axApp = AXUIElementCreateApplication(app.processIdentifier)
-        var winRef: CFTypeRef?
-        AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &winRef)
-        guard let winRaw = winRef, CFGetTypeID(winRaw) == AXUIElementGetTypeID() else { return nil }
-        let win = winRaw as! AXUIElement
-        var urlRef: CFTypeRef?
-        let err = AXUIElementCopyAttributeValue(win, "AXURL" as CFString, &urlRef)
-        if err == .success, let u = urlRef as? NSURL { return u.absoluteString }
-        return nil
+    /// Chromium browsers don't expose AXURL — their URL comes via AppleScript.
+    private static let chromiumApps: Set<String> = ["Google Chrome", "Brave Browser", "Microsoft Edge", "Arc"]
+
+    /// Active-tab URL, cached. Refreshed only on app/window switch and poll —
+    /// NOT per event — because the AppleScript path costs ~10-50ms and resolving
+    /// it on every click would back up the capture queue.
+    private var cachedURL: String?
+    private var cachedURLApp: String?
+
+    /// Cached browser URL for the per-event path. Returns nil for non-browsers,
+    /// or when the cache belongs to a different app than the one asked about.
+    func currentURL(for appName: String?) -> String? {
+        guard let appName = appName, Self.browserApps.contains(appName) else { return nil }
+        return appName == cachedURLApp ? cachedURL : nil
+    }
+
+    /// Resolve the active tab URL: AXURL first (Safari/WebKit), then AppleScript
+    /// for Chromium browsers (Chrome/Brave/Edge/Arc) which don't expose AXURL.
+    static func resolveBrowserURL(appName: String) -> String? {
+        if let app = NSWorkspace.shared.frontmostApplication {
+            let axApp = AXUIElementCreateApplication(app.processIdentifier)
+            var winRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &winRef)
+            if let winRaw = winRef, CFGetTypeID(winRaw) == AXUIElementGetTypeID() {
+                let win = winRaw as! AXUIElement
+                var urlRef: CFTypeRef?
+                if AXUIElementCopyAttributeValue(win, "AXURL" as CFString, &urlRef) == .success,
+                   let u = urlRef as? NSURL {
+                    return u.absoluteString
+                }
+            }
+        }
+        return chromiumApps.contains(appName) ? urlViaAppleScript(appName: appName) : nil
+    }
+
+    /// Active-tab URL via AppleScript. Chromium browsers share Chrome's
+    /// scripting dictionary. Returns nil (degrades gracefully) until the user
+    /// grants Automation permission for SifuBar → the browser.
+    private static func urlViaAppleScript(appName: String) -> String? {
+        let source = "tell application \"\(appName)\" to get URL of active tab of window 1"
+        guard let script = NSAppleScript(source: source) else { return nil }
+        var error: NSDictionary?
+        let result = script.executeAndReturnError(&error)
+        if error != nil { return nil }
+        let url = result.stringValue
+        return (url?.isEmpty == false) ? url : nil
+    }
+
+    /// Recompute the cached URL for the current app. Cheap for non-browsers.
+    private func refreshURL() {
+        guard let app = currentApp, Self.browserApps.contains(app) else {
+            cachedURL = nil
+            cachedURLApp = nil
+            return
+        }
+        cachedURL = Self.resolveBrowserURL(appName: app)
+        cachedURLApp = app
     }
 
     func start() {
@@ -76,6 +121,7 @@ final class AppTracker {
         let prevApp = currentApp ?? "unknown"
         let desc = "Switched from \(prevApp) to \(newApp)"
         currentApp = newApp
+        refreshURL()  // new frontmost app may be a browser — refresh cached URL
 
         onSwitch?("app_switch", newApp, currentWindow, desc)
     }
@@ -94,6 +140,7 @@ final class AppTracker {
 
             let desc = "Window: \(title)"
             currentWindow = title
+            refreshURL()  // title change usually means navigation — refresh URL
             onSwitch?("window_switch", currentApp, title, desc)
         } else if let title = title {
             currentWindow = title
