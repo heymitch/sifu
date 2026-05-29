@@ -127,12 +127,16 @@ class TestLatestUnit:
         (d / "macro.json").write_text(json.dumps({"schema_version": 1, "steps": []}), encoding="utf-8")
         (d / "meta.json").write_text(json.dumps({"id": wid, "captured_at": captured_at}), encoding="utf-8")
 
-    def test_returns_most_recent_by_captured_at(self, tmp_path, monkeypatch):
+    def test_returns_most_recently_compiled_not_captured(self, tmp_path, monkeypatch):
+        """'Last' = most recently compiled (mtime), even if an older recording.
+        wf-b has the OLDER captured_at but is compiled (written) last."""
+        import os
         monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
-        self._unit("wf-old", "2026-05-01T10:00:00")
-        self._unit("wf-new", "2026-05-28T15:00:00")
-        self._unit("wf-mid", "2026-05-14T09:00:00")
-        assert library.latest_unit() == "wf-new"
+        self._unit("wf-a", "2026-05-28T15:00:00")  # newer recording
+        self._unit("wf-b", "2026-05-01T09:00:00")  # older recording, compiled last
+        os.utime(library.unit_dir("wf-a") / "meta.json", (1000, 1000))
+        os.utime(library.unit_dir("wf-b") / "meta.json", (2000, 2000))
+        assert library.latest_unit() == "wf-b"
 
     def test_none_when_empty(self, tmp_path, monkeypatch):
         monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")

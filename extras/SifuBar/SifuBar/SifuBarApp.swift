@@ -306,9 +306,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
+        // Copy Last Workflow — gated while a compile is still analyzing the
+        // latest session, so it can't hand back a stale (previous) unit.
+        let analyzing = (workingLayer != nil)
+        let copyItem = NSMenuItem(
+            title: analyzing ? "\u{23F3} Analyzing latest\u{2026}" : "\u{1F4E4} Copy Last Workflow",
+            action: analyzing ? nil : #selector(copyLastSifu),
+            keyEquivalent: ""
+        )
+        copyItem.target = self
+        menu.addItem(copyItem)
+
         // Quick actions
         for (title, sel) in [
-            ("\u{1F4E4} Copy Last Workflow", #selector(copyLastSifu)),
             ("\u{1F4CB} Compile SOPs", #selector(compileSifu)),
             ("\u{1F3AF} Coach Report", #selector(coachSifu)),
             ("\u{1F4CA} Show Patterns", #selector(patternsSifu)),

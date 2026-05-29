@@ -68,16 +68,20 @@ def remove_unit(workflow_id: str) -> bool:
 
 
 def latest_unit() -> Optional[str]:
-    """Most recently captured library unit (by meta `captured_at`, then id).
-    Used by 'Copy Last Workflow' — what the user just recorded."""
-    best, best_key = None, None
-    for wid in list_units():
-        u = read_unit(wid)
-        captured_at = (u or {}).get("meta", {}).get("captured_at", "") or ""
-        key = (captured_at, wid)
-        if best_key is None or key > best_key:
-            best, best_key = wid, key
-    return best
+    """Most recently COMPILED library unit — what the user just produced.
+
+    Sorted by unit mtime, not capture time: 'Copy Last Workflow' should hand
+    back the unit you just compiled, even if it came from an older recording
+    than some other unit already in the library.
+    """
+    def _mtime(wid: str) -> float:
+        try:
+            return (unit_dir(wid) / "meta.json").stat().st_mtime
+        except OSError:
+            return 0.0
+
+    units = list_units()
+    return max(units, key=lambda w: (_mtime(w), w)) if units else None
 
 
 def read_unit(workflow_id: str) -> Optional[dict]:
