@@ -36,6 +36,27 @@ Recommend ONE and build it. Separate the REPEATABLE core from one-off noise
 captured in the same session — don't bake session-specific side-tasks into the
 artifact.
 
+### Decompose each step: automatable action + required knowledge
+For EVERY step, split it into two parts:
+  - the AUTOMATABLE action — what a tool can do (post, upload, send, open, fill).
+    Prefer a shortcut: a Printing Press agent-native CLI for the service, an
+    existing CLI/API, or browser automation. This is the cheap, stable part.
+  - the KNOWLEDGE the agent needs to do it well — judgment, voice, taste, the
+    "why". (Ghostwriting example: drafting and editing are KNOWLEDGE; posting to
+    LinkedIn is AUTOMATABLE.) Capture this as skill instructions / context.
+A whole workflow is a composition of automatable shortcuts wired together by
+agent knowledge. Name the missing knowledge explicitly so the user can supply it.
+
+### Compose by stability, length, and frequency
+Let the artifact's shape follow the workflow's nature:
+  - SHORT, STABLE, FREQUENT (same actions every time) -> mostly a CLI/skill;
+    automate aggressively, consider printing a CLI (Printing Press) for the service.
+  - LONG, CREATIVE, UNSTABLE (e.g. ghostwriting) -> mostly KNOWLEDGE plus a few
+    automatable bookends; a human SOP may serve the user better than automation.
+If the task is better handed to a PERSON than an agent, build a HUMAN SOP instead:
+a readable doc with the steps and ANNOTATED screenshots (run `sifu annotate`, or
+use the make-human-sop skill). Offer the user both paths — agent skill vs human SOP.
+
 ### Execution tools (most efficient first)
 Prefer the most efficient way to perform each step; naive vision-clicking is the
 fallback, not the default:

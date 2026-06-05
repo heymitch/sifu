@@ -320,6 +320,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Quick actions
         for (title, sel) in [
             ("\u{1F4CB} Compile SOPs", #selector(compileSifu)),
+            ("\u{1F310} Open Dashboard", #selector(openDashboard)),
             ("\u{1F3AF} Coach Report", #selector(coachSifu)),
             ("\u{1F4CA} Show Patterns", #selector(patternsSifu)),
             ("\u{1F4DD} Show Log", #selector(logSifu)),
@@ -337,11 +338,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         loginItem.target = self
         menu.addItem(loginItem)
 
+        // Auto-open the dashboard to the just-compiled workflow (copy always happens regardless)
+        let autoOpenTitle = autoOpenViewer
+            ? "\u{2705} Open Dashboard on Compile"
+            : "Open Dashboard on Compile"
+        let autoOpenItem = NSMenuItem(title: autoOpenTitle, action: #selector(toggleAutoOpenViewer), keyEquivalent: "")
+        autoOpenItem.target = self
+        menu.addItem(autoOpenItem)
+
         let configItem = NSMenuItem(title: "\u{2699}\u{FE0F} Config", action: #selector(configSifu), keyEquivalent: "")
         configItem.target = self
         menu.addItem(configItem)
 
-        let openDataItem = NSMenuItem(title: "\u{1F4C2} Open Data", action: #selector(openData), keyEquivalent: "")
+        let openDataItem = NSMenuItem(title: "\u{1F4C2} Show Location in Finder", action: #selector(openData), keyEquivalent: "")
         openDataItem.target = self
         menu.addItem(openDataItem)
 
@@ -426,12 +435,50 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateMenu()
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             self?.runSifuSync(subcommand)
+            if layer == "compile" {
+                self?.handleCompileFinished()
+            }
             DispatchQueue.main.async {
                 self?.workingLayer = nil
                 self?.updateMenu()
             }
         }
     }
+
+    /// After a compile finishes: ALWAYS copy the fresh workflow to the clipboard
+    /// and notify; if the user opted in, also open the dashboard to it. Runs on a
+    /// background thread (called from runSifuWithLayer's worker).
+    private func handleCompileFinished() {
+        runSifuSync("copy-last")  // workflow + skill-building instructions -> clipboard
+        notify("Workflow copied",
+               "The compiled workflow is on your clipboard \u{2014} paste it into your agent.")
+        if autoOpenViewer {
+            runSifu("open --last")  // starts the UI server if needed, opens /workflow/{id}
+        }
+    }
+
+    /// Bar-only UI preference (does not touch the engine's config.json).
+    private var autoOpenViewer: Bool {
+        get { UserDefaults.standard.bool(forKey: "autoOpenViewerOnCompile") }
+        set { UserDefaults.standard.set(newValue, forKey: "autoOpenViewerOnCompile") }
+    }
+
+    @objc private func openDashboard() { runSifu("open") }  // list view
+
+    @objc private func toggleAutoOpenViewer() {
+        autoOpenViewer.toggle()
+        updateMenu()
+    }
+
+    /// Notification Center banner via osascript — no entitlement / authorization
+    /// prompt required, matches the app's shell-out pattern.
+    private func notify(_ title: String, _ body: String) {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        task.arguments = ["-e", "display notification \"\(body)\" with title \"\(title)\""]
+        try? task.run()
+    }
+
     @objc private func toggleLoginItem() { loginItemManager.toggle(); updateMenu() }
 
     @objc private func openData() {

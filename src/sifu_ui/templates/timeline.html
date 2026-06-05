@@ -4,7 +4,7 @@
 <a class="unit" href="/workflow/{{ r.id }}">
   <div class="eyebrow">WORKFLOW · {{ r.id }}</div>
   <h4>{{ r.title }}</h4>
-  <small>{{ r.captured_at or "—" }} · {{ r.step_count }} steps · {{ r.app_set|join(" · ") }}</small>
+  <small>{{ r.captured_pretty or "—" }} · {{ r.step_count }} steps · {{ r.app_set|join(" · ") }}</small>
 </a>
 {% else %}<p>No workflows yet. Run <code>sifu start</code>.</p>{% endfor %}
 <script>

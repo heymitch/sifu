@@ -1,9 +1,9 @@
-"""Read-only library browser. No claude -p, no editors — copy-as-context
-replaces in-app editing (spec §7)."""
+"""Library browser. No claude -p. The compiled collection is STAGED and editable
+in-site; the user's own agent turns it into a skill."""
 
 from pathlib import Path
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sifu_ui.watcher import event_stream
@@ -30,6 +30,12 @@ def workflow(request: Request, workflow_id: str):
         return HTMLResponse("Not found", status_code=404)
     return templates.TemplateResponse(
         request, "doc.html", {"u": u, "wid": workflow_id})
+
+
+@app.post("/workflow/{workflow_id}/edit")
+def edit_workflow(workflow_id: str, workflow_md: str = Form(...)):
+    library.update_workflow_md(workflow_id, workflow_md)
+    return RedirectResponse(f"/workflow/{workflow_id}", status_code=303)
 
 
 @app.get("/api/events")

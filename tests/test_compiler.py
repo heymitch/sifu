@@ -59,7 +59,7 @@ class TestCompiler:
     # generation now delegates to the Claude CLI (compile_single), so those
     # internal helpers no longer exist.
 
-    def test_compile_single_calls_claude(self, tmp_path, monkeypatch):
+    def test_compile_single_renders_deterministically(self, tmp_path, monkeypatch):
         from sifu import library
         monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
 
@@ -69,17 +69,15 @@ class TestCompiler:
 
         with patch("sifu.compiler.sop.get_connection", return_value=self.conn), \
              patch("subprocess.run") as mock_subprocess_run:
-            mock_subprocess_run.return_value = MagicMock(
-                returncode=0, stdout="# I see you do this.\n"
-            )
             out = compile_single("wf-compile-test")
 
         assert out == library.unit_dir("wf-compile-test")
         assert (out / "macro.json").exists()
         assert (out / "meta.json").exists()
         assert (out / "workflow.md").exists()
-        assert "I see you do this" in (out / "workflow.md").read_text()
-        assert mock_subprocess_run.called
+        # Deterministic compile: no LLM / subprocess call, structured steps emitted.
+        assert not mock_subprocess_run.called
+        assert "## Step " in (out / "workflow.md").read_text()
 
     def test_get_compiled_ids_empty(self):
         from sifu.compiler.sop import _get_compiled_ids

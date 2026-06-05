@@ -1,16 +1,19 @@
-"""SOP Compiler (Layer 2) — LLM-powered SOP generation from workflow segments."""
+"""SOP Compiler (Layer 2) — deterministic SOP generation from workflow segments.
 
-import os
+No LLM at compile time. The compiled unit is STAGED markdown; the summarizing and
+skill-decomposition happen in the user's own agent when they copy it. See
+docs/superpowers/specs/2026-06-05-copy-to-agent-skill-decomposition.md.
+"""
+
 import re
 import subprocess
-import tempfile
 from pathlib import Path
 
 from sifu import library
 from sifu.compiler.macro import build_macro
 from sifu.compiler.meta import build_meta
-from sifu.llm import claude_cmd
-from sifu.storage.db import get_connection, get_events_by_workflow, DB_PATH
+from sifu.compiler.render import render_workflow_md
+from sifu.storage.db import get_connection, get_events_by_workflow
 
 
 def _open_sops(paths: list):
@@ -77,50 +80,9 @@ def compile_single(workflow_id: str) -> Path:
     rows = [dict(e) for e in events]
     screenshots = [r["screenshot_path"] for r in rows if r.get("screenshot_path")]
 
-    screenshots_dir = Path.home() / ".sifu" / "screenshots"
-    tmp_fd, tmp_path_str = tempfile.mkstemp(suffix=".md")
-    os.close(tmp_fd)
-    tmp_md_path = Path(tmp_path_str)
-
-    prompt = f"""Compile workflow "{workflow_id}" into a polished SOP.
-
-DATABASE: {DB_PATH}
-Query: SELECT * FROM events WHERE workflow_id = '{workflow_id}' ORDER BY timestamp ASC
-This workflow has {len(events)} events.
-
-SCREENSHOTS: {screenshots_dir}
-OUTPUT: Write the SOP to {tmp_md_path}
-
-VOICE: Sifu's teacher notebook — sentence case, observational, no marketing words,
-no emoji. Open with "I see you do this." style framing. Use mono-style IDs.
-
-INSTRUCTIONS:
-1. Read all events for this workflow from the SQLite database
-2. Write a markdown SOP: title, time estimate, apps used, numbered steps (what + why)
-3. Append a Screenshots section referencing any screenshot_path values: ![capture-N](path)
-4. Write the final SOP to the output path; print only DONE"""
-
-    try:
-        result = subprocess.run(
-            claude_cmd("-p", "--model", "sonnet", "--allowedTools", "Bash,Read,Write,Grep"),
-            input=prompt, capture_output=True, text=True, timeout=600,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"Claude CLI failed: {result.stderr.strip()}")
-
-        if tmp_md_path.exists() and tmp_md_path.stat().st_size > 0:
-            workflow_md = tmp_md_path.read_text(encoding="utf-8")
-        else:
-            content = result.stdout.strip()
-            if content and content != "DONE" and len(content) > 10:
-                workflow_md = content
-            else:
-                raise RuntimeError(f"Claude CLI did not write {tmp_md_path}")
-    finally:
-        try:
-            tmp_md_path.unlink()
-        except Exception:
-            pass
+    # Deterministic render — no LLM. The summarizing / skill-decomposition now
+    # happens in the user's own agent when they copy the staged collection.
+    workflow_md = render_workflow_md(workflow_id, rows)
 
     macro = build_macro(workflow_id, rows)
     meta = build_meta(workflow_id, rows)

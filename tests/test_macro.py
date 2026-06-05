@@ -98,14 +98,13 @@ def test_compile_single_writes_library_unit(tmp_path, monkeypatch):
         timestamp="2026-05-19T10:00:00"))
     conn.commit()
 
-    with patch("sifu.compiler.sop.get_connection", return_value=conn), \
-         patch("subprocess.run") as mrun:
-        mrun.return_value = MagicMock(returncode=0, stdout="# I see you do this.\n")
+    with patch("sifu.compiler.sop.get_connection", return_value=conn):
         from sifu.compiler.sop import compile_single
         out = compile_single("wf-int-001")
 
     assert out == library.unit_dir("wf-int-001")
     assert (out / "macro.json").exists()
     assert (out / "meta.json").exists()
-    assert (out / "workflow.md").read_text().startswith("# I see")
-    assert "I see you do this" in (out / "workflow.md").read_text()
+    md = (out / "workflow.md").read_text()
+    assert md.startswith("# Workflow:")  # deterministic title
+    assert "## Step 1" in md

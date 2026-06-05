@@ -106,6 +106,52 @@ def ui_cmd_cli(port, no_open):
     uvicorn.run("sifu_ui.app:app", host="127.0.0.1", port=port)
 
 
+@main.command(name="open")
+@click.option("--last", is_flag=True,
+              help="Open the workflow you just compiled (default: the list).")
+def open_cmd_cli(last):
+    """Open the library dashboard, starting the server if needed."""
+    from sifu.open_cmd import open_dashboard
+
+    url = open_dashboard(last=last)
+    if url is None:
+        click.echo("No workflows yet — record one, then Stop + Compile.")
+    else:
+        click.echo(f"Opening {url}")
+
+
+@main.command(name="annotate")
+@click.argument("workflow_id", required=False)
+def annotate_cli(workflow_id):
+    """Mark up a workflow's screenshots for a human SOP (writes annotated/)."""
+    from sifu import library
+    from sifu.sop_annotate import annotate_workflow
+
+    wid = workflow_id or library.latest_unit()
+    if not wid:
+        click.echo("No workflows yet.")
+        return
+    out = annotate_workflow(wid)
+    click.echo(f"Annotated {len(out)} screenshot(s) -> {library.unit_dir(wid) / 'annotated'}")
+
+
+@main.group(name="skills")
+def skills_group():
+    """Manage the Sifu agent skill collection."""
+
+
+@skills_group.command(name="install")
+@click.option("--dest", default=None, help="Target dir (default: ~/.claude/skills).")
+def skills_install_cli(dest):
+    """Install the Sifu skills (teach-the-agent, make-human-sop) into your agent."""
+    from pathlib import Path
+    from sifu.skills_install import install_skills
+
+    target = Path(dest) if dest else Path.home() / ".claude" / "skills"
+    names = install_skills(target)
+    click.echo(f"Installed {', '.join(names)} -> {target}")
+
+
 @main.command()
 @click.option("--today", is_flag=True, help="Today only.")
 @click.option("--app", help="Filter by application.")

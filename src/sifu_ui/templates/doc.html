@@ -1,8 +1,15 @@
 {% extends "base.html" %}{% block content %}
 <div class="eyebrow">WORKFLOW · {{ wid }}</div>
-<span class="stamp">Classified</span>
-<pre style="border:1px solid var(--rule);background:var(--bg-deep);padding:var(--sp-5)">{{ u.workflow_md }}</pre>
-<div class="eyebrow">Classified steps · {{ u.macro.steps|length }}</div>
-<div class="seal">師 · Verified by Sifu</div>
+<span class="stamp">Staged</span>
+<form method="post" action="/workflow/{{ wid }}/edit">
+  <textarea name="workflow_md" rows="24" spellcheck="false"
+    style="width:100%;box-sizing:border-box;font:13px/1.5 ui-monospace,monospace;border:1px solid var(--rule);background:var(--bg-deep);color:var(--fg-1);padding:var(--sp-5);border-radius:var(--r-2)">{{ u.workflow_md }}</textarea>
+  <div style="margin-top:var(--sp-3)">
+    <button type="submit">Save edits</button>
+    <small style="margin-left:var(--sp-3)">Edit the staged collection, then copy it into your agent.</small>
+  </div>
+</form>
+<div class="eyebrow">Steps · {{ u.macro.steps|length }}</div>
+<div class="seal">師 · Staged by Sifu — your agent builds the skill</div>
 <p><a href="/">← back</a></p>
 {% endblock %}

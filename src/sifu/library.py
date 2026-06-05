@@ -84,6 +84,20 @@ def latest_unit() -> Optional[str]:
     return max(units, key=lambda w: (_mtime(w), w)) if units else None
 
 
+def update_workflow_md(workflow_id: str, workflow_md: str) -> bool:
+    """Overwrite a unit's workflow.md (in-site editing). False if no such unit."""
+    d = unit_dir(workflow_id)
+    if not (d / "macro.json").exists():
+        return False
+    (d / "workflow.md").write_text(workflow_md, encoding="utf-8")
+    try:
+        from sifu_ui.watcher import notify
+        notify(workflow_id)
+    except ImportError:
+        pass
+    return True
+
+
 def read_unit(workflow_id: str) -> Optional[dict]:
     d = unit_dir(workflow_id)
     if not (d / "macro.json").exists():
