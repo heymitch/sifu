@@ -2,6 +2,8 @@
 <h2>Workflows Sifu has classified</h2>
 {% for r in rows %}
 <a class="unit" href="/workflow/{{ r.id }}">
+  <button class="copy-btn"
+    onclick="event.preventDefault();event.stopPropagation();sifuCopy('{{ r.id }}', this)">Copy</button>
   <div class="eyebrow">WORKFLOW · {{ r.id }}</div>
   <h4>{{ r.title }}</h4>
   <small>{{ r.captured_pretty or "—" }} · {{ r.step_count }} steps · {{ r.app_set|join(" · ") }}</small>

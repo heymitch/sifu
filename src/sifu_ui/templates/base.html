@@ -1,10 +1,27 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <title>Sifu</title><link rel="stylesheet" href="/static/sifu-design.css">
 <style>body{margin:0;padding:var(--sp-8)}main{max-width:var(--max-w-content);margin:0 auto}
-.unit{border:1px solid var(--rule);padding:var(--sp-5);margin:var(--sp-4) 0;border-radius:var(--r-2)}
+.unit{position:relative;border:1px solid var(--rule);padding:var(--sp-5);margin:var(--sp-4) 0;border-radius:var(--r-2)}
 a.unit{display:block;text-decoration:none;color:var(--fg-1)}
-a.unit:hover{background:var(--hover-tint)}</style></head>
+a.unit:hover{background:var(--hover-tint)}
+.copy-btn{cursor:pointer;font:600 12px/1 ui-monospace,monospace;color:var(--fg-1);
+  background:var(--bg-deep);border:1px solid var(--rule);border-radius:var(--r-1,6px);
+  padding:6px 10px}
+.copy-btn:hover{background:var(--hover-tint)}
+.unit .copy-btn{position:absolute;top:var(--sp-4);right:var(--sp-4)}</style></head>
 <body><main>
 <div class="eyebrow">Sifu · workflow library</div>
 {% block content %}{% endblock %}
+<script>
+async function sifuCopy(wid, btn){
+  const label = btn.textContent;
+  try{
+    const r = await fetch(`/workflow/${wid}/payload`);
+    if(!r.ok) throw new Error(r.status);
+    await navigator.clipboard.writeText(await r.text());
+    btn.textContent = "Copied ✓";
+  }catch(e){ btn.textContent = "Copy failed"; }
+  setTimeout(()=>{ btn.textContent = label; }, 1500);
+}
+</script>
 </main></body></html>

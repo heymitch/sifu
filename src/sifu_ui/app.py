@@ -3,7 +3,8 @@ in-site; the user's own agent turns it into a skill."""
 
 from pathlib import Path
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
+from fastapi.responses import (HTMLResponse, StreamingResponse, RedirectResponse,
+                               PlainTextResponse)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sifu_ui.watcher import event_stream
@@ -30,6 +31,16 @@ def workflow(request: Request, workflow_id: str):
         return HTMLResponse("Not found", status_code=404)
     return templates.TemplateResponse(
         request, "doc.html", {"u": u, "wid": workflow_id})
+
+
+@app.get("/workflow/{workflow_id}/payload", response_class=PlainTextResponse)
+def workflow_payload(workflow_id: str):
+    """The agent-ready briefing for one workflow (what click-to-copy copies)."""
+    from sifu.context_cmd import render_unit
+    p = render_unit(workflow_id)
+    if p is None:
+        return PlainTextResponse("Not found", status_code=404)
+    return PlainTextResponse(p)
 
 
 @app.post("/workflow/{workflow_id}/edit")

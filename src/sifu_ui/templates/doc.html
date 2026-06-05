@@ -1,5 +1,8 @@
 {% extends "base.html" %}{% block content %}
-<div class="eyebrow">WORKFLOW · {{ wid }}</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--sp-4)">
+  <div class="eyebrow">WORKFLOW · {{ wid }}</div>
+  <button class="copy-btn" onclick="sifuCopy('{{ wid }}', this)">Copy for agent</button>
+</div>
 <span class="stamp">Staged</span>
 <form method="post" action="/workflow/{{ wid }}/edit">
   <textarea name="workflow_md" rows="24" spellcheck="false"
