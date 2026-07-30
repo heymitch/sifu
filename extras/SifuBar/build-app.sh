@@ -14,9 +14,15 @@ cp SifuBar/Info.plist "$APP_DIR/Info.plist"
 
 # Code sign with a stable identity so macOS preserves Accessibility
 # trust across rebuilds. Falls back to ad-hoc if no cert is available.
-SIGN_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | head -1 | sed 's/.*"\(.*\)".*/\1/' || true)
+# Only lines listing a real identity carry a quoted name; "0 valid identities
+# found" has no quotes, so awk yields an empty string and we fall through to
+# ad-hoc. (The old `head -1 | sed` kept the line's leading whitespace, so the
+# literal-string guard below never matched and codesign was handed
+# "     0 valid identities found" as an identity name — it errored out and
+# set -e killed the script before the bundle was ever signed.)
+SIGN_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/"/ {print $2; exit}' || true)
 
-if [ -n "$SIGN_IDENTITY" ] && [ "$SIGN_IDENTITY" != "0 valid identities found" ]; then
+if [ -n "$SIGN_IDENTITY" ]; then
     echo "Signing with: $SIGN_IDENTITY"
     codesign --force --sign "$SIGN_IDENTITY" --deep "build/SifuBar.app"
 else
