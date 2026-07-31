@@ -20,7 +20,33 @@ Leave Sifu on for a day. At the end you have:
 ```bash
 git clone https://github.com/heymitch/sifu.git ~/sifu
 cd ~/sifu
-pip install -e .
+./install.sh
+```
+
+That installs the Python package (including the `[ui]` extra that the local
+library browser needs), creates the library, and builds and installs
+SifuBar.app. It is idempotent — re-running only reinstalls the menu bar app if
+the built binary actually changed.
+
+Two permissions have to be granted by hand, and it's worth doing it through
+the app rather than System Settings:
+
+> SifuBar (◇) → **"⚠️ Permissions needed to record"** → grant **Accessibility**
+> and **Screen Recording** in the panes it opens → **Restart**
+
+That menu item runs the permission flow, which opens the right panes *and*
+polls until both land. Granting manually skips the poll, so the app can keep
+reporting "permissions needed" until it's restarted.
+
+**Without an Apple Development certificate** SifuBar is ad-hoc signed, and
+macOS ties Accessibility and Screen Recording to the signature — so every
+rebuild revokes both and you re-grant them. A free cert from Xcode makes them
+persist; `build-app.sh` picks one up automatically if it exists.
+
+Python-only install, leaving the menu bar app untouched:
+
+```bash
+./install.sh --skip-app
 ```
 
 ## How it works
