@@ -488,12 +488,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func restartApp() {
-        // Relaunch self to pick up newly granted permissions
-        let executableURL = Bundle.main.executableURL!
+        // Relaunch self to pick up newly granted permissions.
+        //
+        // `open` hands the request to LaunchServices, which sees this instance
+        // still alive and simply activates it instead of starting a new one.
+        // The old code asked and then terminated immediately, so the app died
+        // and never came back — the one thing a Restart button must not do.
+        // Wait for our own pid to disappear first, then launch. /bin/sh is not
+        // a child of the app's UI lifecycle, so it survives our termination.
+        let bundlePath = Bundle.main.bundlePath
+        let pid = ProcessInfo.processInfo.processIdentifier
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        task.arguments = ["-a", Bundle.main.bundlePath]
-        try? task.run()
+        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+        task.arguments = [
+            "-c",
+            "while kill -0 \(pid) 2>/dev/null; do sleep 0.2; done; open \"\(bundlePath)\"",
+        ]
+        do {
+            try task.run()
+        } catch {
+            // Stay alive rather than quit with no way back.
+            NSLog("SifuBar: relaunch could not be scheduled — \(error.localizedDescription)")
+            return
+        }
         NSApp.terminate(nil)
     }
 
