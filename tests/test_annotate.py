@@ -46,3 +46,25 @@ def test_annotate_workflow_writes_an_annotated_dir(tmp_path, monkeypatch):
 
     assert len(out) == 1
     assert (library.unit_dir("wf-a") / "annotated" / "000.jpg").exists()
+
+
+def test_annotate_marks_the_recorded_point_for_window_relative_coords(tmp_path, monkeypatch):
+    from sifu import library
+    from sifu.compiler.macro import build_macro
+    from sifu.compiler.meta import build_meta
+    from sifu.sop_annotate import annotate_workflow
+
+    monkeypatch.setattr(library, "LIBRARY_DIR", tmp_path / "library")
+    shot = tmp_path / "000.jpg"
+    Image.new("RGB", (200, 200), "white").save(shot)
+    rows = [{"app": "Chrome", "type": "click", "position_x": 150, "position_y": 150,
+             "window_rect": "[100, 100, 100, 100]", "screenshot_path": str(shot),
+             "timestamp": "2026-06-05T10:00:00"}]
+    library.write_unit("wf-w", workflow_md="# x", macro=build_macro("wf-w", rows),
+                       meta=build_meta("wf-w", rows), screenshots=[shot])
+
+    (out,) = annotate_workflow("wf-w")
+
+    img = Image.open(out).convert("RGB")
+    assert img.getpixel((150, 150))[1] < 120, "marker at the recorded click"
+    assert img.getpixel((50, 50))[1] > 240, "nothing at the window-relative point"
