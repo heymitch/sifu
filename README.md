@@ -97,11 +97,7 @@ Compiled SOPs auto-open in Sublime Text and you get a macOS notification when co
 
 ## Menu bar
 
-The menu bar widget launches **automatically** with `sifu start`. No setup needed.
-
-It uses SifuBar (a native Python widget bundled with Sifu) that works on all macOS versions including Tahoe. Falls back to SwiftBar if installed.
-
-You can also launch it standalone: `sifubar`
+SifuBar.app (Swift, `extras/SifuBar`) is the menu bar app and the capture engine. `sifu start` launches it if it isn't running.
 
 Shows recording status in the menu bar:
 - **◉ Sifu** — recording (click for stop/pause/sensitive)
