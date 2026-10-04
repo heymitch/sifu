@@ -64,7 +64,7 @@ def compile_single(workflow_id: str) -> Path:
         raise ValueError(f"unsafe workflow_id: {workflow_id!r}")
 
     rows = [dict(e) for e in events]
-    screenshots = [r["screenshot_path"] for r in rows if r.get("screenshot_path")]
+    screenshots = [Path(r["screenshot_path"]) if r.get("screenshot_path") else None for r in rows]
 
     workflow_md = render_workflow_md(workflow_id, rows)
 
@@ -74,7 +74,7 @@ def compile_single(workflow_id: str) -> Path:
         workflow_id,
         workflow_md=workflow_md,
         macro=macro, meta=meta,
-        screenshots=[Path(s) for s in screenshots],
+        screenshots=screenshots,
     )
     return library.unit_dir(workflow_id)
 

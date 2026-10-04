@@ -13,8 +13,11 @@ def unit_dir(workflow_id: str) -> Path:
 
 
 def write_unit(workflow_id: str, workflow_md: str, macro: dict,
-               meta: dict, screenshots: list[Path]) -> Path:
-    """Write a complete library unit. Overwrites an existing unit atomically-ish."""
+               meta: dict, screenshots: list[Optional[Path]]) -> Path:
+    """Write a complete library unit. Overwrites an existing unit atomically-ish.
+
+    `screenshots` is indexed by step; None marks a step without one.
+    """
     d = unit_dir(workflow_id)
     d.mkdir(parents=True, exist_ok=True)
     (d / "workflow.md").write_text(workflow_md, encoding="utf-8")
@@ -24,6 +27,8 @@ def write_unit(workflow_id: str, workflow_md: str, macro: dict,
     shutil.rmtree(shots, ignore_errors=True)
     shots.mkdir(exist_ok=True)
     for i, src in enumerate(screenshots):
+        if src is None:
+            continue
         src = Path(src)
         if src.exists():
             shutil.copy2(src, shots / f"{i:03d}{src.suffix or '.jpg'}")
