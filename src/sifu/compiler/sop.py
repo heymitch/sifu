@@ -44,28 +44,11 @@ def _notify(compiled_count: int):
     ])
 
 
-def _get_sops_dir() -> Path:
-    """Get configured SOPs directory."""
-    from sifu.config import load_config
-    config = load_config()
-    return Path(config.get("sops_dir", str(Path.home() / ".sifu" / "output" / "sops")))
-
-
-# ---------------------------------------------------------------------------
-# Core compilation — delegates to Claude CLI with file references
-# ---------------------------------------------------------------------------
-
-
 def compile_single(workflow_id: str) -> Path:
-    """Compile a workflow into a canonical library unit by delegating to Claude CLI.
-
-    Instead of piping events as text, we tell Claude where the DB is
-    and let it query, read screenshots, and write the SOP itself.
-    No size limits, no chunking, no stitching.
+    """Compile a workflow into a canonical library unit.
 
     Returns the library unit directory Path.
     Raises ValueError if no events exist for the workflow_id.
-    Raises RuntimeError if the Claude CLI call fails.
     """
     conn = get_connection()
     events = get_events_by_workflow(conn, workflow_id)
@@ -80,8 +63,6 @@ def compile_single(workflow_id: str) -> Path:
     rows = [dict(e) for e in events]
     screenshots = [r["screenshot_path"] for r in rows if r.get("screenshot_path")]
 
-    # Deterministic render — no LLM. The summarizing / skill-decomposition now
-    # happens in the user's own agent when they copy the staged collection.
     workflow_md = render_workflow_md(workflow_id, rows)
 
     macro = build_macro(workflow_id, rows)

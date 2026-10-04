@@ -20,7 +20,6 @@ DEFAULT_CONFIG = {
     ],
     "sensitive_purge_minutes": 5,
     "output_dir": str(SIFU_DIR / "output"),
-    "sops_dir": str(SIFU_DIR / "output" / "sops"),
     "automations_dir": str(SIFU_DIR / "automations"),
     "capabilities_dir": str(SIFU_DIR / "capabilities.d"),
     "workflows_dir": str(SIFU_DIR / "output" / "workflows"),

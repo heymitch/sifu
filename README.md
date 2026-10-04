@@ -75,25 +75,20 @@ sifu log             # show today's action log
 sifu patterns        # detected workflow patterns
 sifu sessions        # list work sessions
 
-# Generate (uses Claude Code)
-sifu compile         # generate SOPs from patterns
-sifu coach --today   # efficiency coaching report
-sifu automate        # list automation candidates
+# Generate
+sifu compile         # turn segments into library units (no LLM)
+sifu copy-last       # copy the latest workflow to the clipboard for your agent
+sifu coach --today   # efficiency coaching report (uses Claude Code)
+sifu automate        # list automation candidates (uses Claude Code)
 
 # Config
 sifu config          # show/edit settings
 sifu sensitive       # panic button: pause + purge last 5 min
 ```
 
-## Where SOPs are saved
+## Where workflows are saved
 
-By default, compiled SOPs land in `~/.sifu/output/sops/`. To save them somewhere more visible (a shared folder, a knowledge base, Obsidian vault, etc.):
-
-```bash
-sifu config sops_dir ~/path/to/your/sops-folder
-```
-
-Compiled SOPs auto-open in Sublime Text and you get a macOS notification when compilation finishes.
+Each compiled workflow is a folder in `~/.sifu/library/<workflow-id>/` (`workflow.md`, `macro.json`, `meta.json`, screenshots). On macOS, compiled workflows open in your `editor` (`sifu config editor "Sublime Text"`, or the system default) and you get a notification when compilation finishes.
 
 ## Menu bar
 
