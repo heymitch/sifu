@@ -95,7 +95,7 @@ Window geometry at the time of the event.
 
 ### `coords`
 
-Pixel coordinates of the interaction.
+Coordinates of the interaction, in screen points (not pixels; multiply by `frame.backing_scale` for pixels).
 
 ```
 {
