@@ -94,6 +94,8 @@ Each compiled workflow is a folder in `~/.sifu/library/<workflow-id>/` (`workflo
 
 SifuBar.app (Swift, `extras/SifuBar`) is the menu bar app and the capture engine. `sifu start` launches it if it isn't running.
 
+The old Python `sifubar` command is gone; it could no longer see whether Sifu was recording. If you still have it, re-run `./install.sh`, which removes it.
+
 Shows recording status in the menu bar:
 - **◉ Sifu** — recording (click for stop/pause/sensitive)
 - **◎ Sifu** — paused
