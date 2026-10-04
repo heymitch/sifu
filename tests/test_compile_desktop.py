@@ -1,4 +1,5 @@
-"""After `sifu compile`, macOS opens each unit and posts a notification."""
+"""After `sifu compile`, macOS opens each unit and posts a notification.
+Other platforms skip both instead of crashing."""
 
 import json
 import subprocess
@@ -52,3 +53,7 @@ def test_macos_opens_with_the_configured_editor(seeded, monkeypatch):
     calls = _compile("darwin", monkeypatch)
     assert calls[0] == ["open", "-a", "Sublime Text", str(library.LIBRARY_DIR / "wf-2026-10-03-001")]
 
+
+def test_linux_compiles_without_desktop_calls(seeded, monkeypatch):
+    assert _compile("linux", monkeypatch) == []
+    assert (library.LIBRARY_DIR / "wf-2026-10-03-001" / "workflow.md").exists()

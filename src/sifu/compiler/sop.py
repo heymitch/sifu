@@ -7,6 +7,7 @@ docs/superpowers/specs/2026-06-05-copy-to-agent-skill-decomposition.md.
 
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 from sifu import library
@@ -17,8 +18,8 @@ from sifu.storage.db import get_connection, get_events_by_workflow
 
 
 def _open_sops(paths: list):
-    """Open compiled SOPs in the configured editor (or system default)."""
-    if not paths:
+    """Open compiled SOPs in the configured editor (or system default). macOS only."""
+    if not paths or sys.platform != "darwin":
         return
     from sifu.config import load_config
     config = load_config()
@@ -34,6 +35,8 @@ def _open_sops(paths: list):
 
 def _notify(compiled_count: int):
     """Send a macOS notification when compilation finishes."""
+    if sys.platform != "darwin":
+        return
     if compiled_count > 0:
         msg = f"{compiled_count} workflow{'s' if compiled_count != 1 else ''} compiled → {library.LIBRARY_DIR}"
     else:
