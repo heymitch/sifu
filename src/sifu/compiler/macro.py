@@ -26,7 +26,7 @@ def _arr(v) -> Optional[list]:
 
 def _frame(row) -> Optional[dict]:
     wr = _arr(row.get("window_rect"))
-    if wr is None:
+    if not (isinstance(wr, list) and len(wr) == 4 and all(isinstance(v, (int, float)) for v in wr)):
         return None
     return {
         "display_id": row.get("display_id"),

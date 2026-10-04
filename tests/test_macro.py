@@ -108,3 +108,11 @@ def test_compile_single_writes_library_unit(tmp_path, monkeypatch):
     md = (out / "workflow.md").read_text()
     assert md.startswith("# Workflow:")  # deterministic title
     assert "## Step 1" in md
+
+
+def test_malformed_window_rect_counts_as_no_window():
+    for bad in ["[10]", "[]", "nope", "{\"x\": 1}", "[\"a\", \"b\", 3, 4]"]:
+        row = {"type": "click", "app": "Notes", "position_x": 10, "position_y": 20, "window_rect": bad}
+        s = build_macro("wf-bad", [row])["steps"][0]
+        assert s["coords"] == {"x": 10, "y": 20, "rel_to": "screen"}, bad
+        assert s["frame"] is None, bad
