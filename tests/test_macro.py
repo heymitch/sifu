@@ -45,7 +45,7 @@ def test_macro_degrades_when_frame_null():
 
 def test_macro_empty_rows():
     m = build_macro("wf-empty", [])
-    assert m == {"schema_version": 1, "workflow_id": "wf-empty", "steps": []}
+    assert m == {"schema_version": 1, "coords_version": 2, "workflow_id": "wf-empty", "steps": []}
 
 def test_expected_falls_back_to_window_title_when_no_url():
     rows = [

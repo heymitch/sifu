@@ -7,6 +7,7 @@ import json
 from typing import Optional
 
 SCHEMA_VERSION = 1
+COORDS_VERSION = 2  # window coords are relative to window_rect; see battleship-contract.md
 _ACTION = {  # event type -> macro action
     "click": "click", "right_click": "click", "shortcut": "key",
     "text_input": "type", "command": "type",
@@ -74,4 +75,5 @@ def build_macro(workflow_id: str, rows: list) -> dict:
             "key": row.get("shortcut"),
             "expected": _expected(nxt),
         })
-    return {"schema_version": SCHEMA_VERSION, "workflow_id": workflow_id, "steps": steps}
+    return {"schema_version": SCHEMA_VERSION, "coords_version": COORDS_VERSION,
+            "workflow_id": workflow_id, "steps": steps}

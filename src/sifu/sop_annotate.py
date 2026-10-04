@@ -35,10 +35,11 @@ def annotate_screenshot(src, coords, label, dst):
     return Path(dst)
 
 
-def _screen_point(step):
-    """Screenshots cover the whole desktop, so draw at the global point."""
+def _screen_point(step, coords_version):
+    """Screenshots cover the whole desktop, so draw at the global point.
+    Macros without coords_version 2 stored the global point already."""
     c = step.get("coords")
-    if c and c.get("rel_to") == "window" and step.get("frame"):
+    if coords_version >= 2 and c and c.get("rel_to") == "window" and step.get("frame"):
         wx, wy = step["frame"]["window_rect"][:2]
         return {"x": c["x"] + wx, "y": c["y"] + wy}
     return c
@@ -56,7 +57,9 @@ def annotate_workflow(wid):
     out_dir = d / "annotated"
     out_dir.mkdir(exist_ok=True)
     results = []
-    for step in u.get("macro", {}).get("steps", []):
+    macro = u.get("macro", {})
+    coords_version = macro.get("coords_version", 1)
+    for step in macro.get("steps", []):
         shot = step.get("screenshot")
         if not shot:
             continue
@@ -64,6 +67,6 @@ def annotate_workflow(wid):
         if not src.exists():
             continue
         dst = out_dir / Path(shot).name
-        annotate_screenshot(src, _screen_point(step), step["index"] + 1, dst)
+        annotate_screenshot(src, _screen_point(step, coords_version), step["index"] + 1, dst)
         results.append(dst)
     return results

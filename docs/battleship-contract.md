@@ -19,6 +19,7 @@ Pure and deterministic — rows in, dict out. No I/O, no LLM calls.
 ```
 {
   "schema_version": 1,
+  "coords_version": 2,
   "workflow_id":   "<string>",
   "steps":         [ <step>, … ]
 }
@@ -27,6 +28,7 @@ Pure and deterministic — rows in, dict out. No I/O, no LLM calls.
 | Field | Type | Notes |
 |---|---|---|
 | `schema_version` | `1` (integer literal) | Always `1` for this version. |
+| `coords_version` | integer, optional | `2`: `coords` with `rel_to: "window"` are relative to `frame.window_rect`. Absent (macros compiled before 2026-10-04): those coords hold the global screen point despite the label, so readers must not add the window origin. |
 | `workflow_id` | string | Opaque identifier supplied by the caller. Treat it as an opaque string; no format, length bound, or character set is guaranteed — the `wf-…` values in examples are illustrative, not a contract. |
 | `steps` | array | Ordered list of step objects, one per recorded event. |
 
@@ -155,6 +157,7 @@ The following is the real output of `build_macro("wf-demo", rows)` for a two-ste
 ```json
 {
   "schema_version": 1,
+  "coords_version": 2,
   "workflow_id": "wf-demo",
   "steps": [
     {
