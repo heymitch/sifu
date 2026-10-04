@@ -67,7 +67,7 @@ INNER (second): Layer 0 (capture) → Layer 1 (patterns) → Layer 2 (compiler) 
 - **Outer layer first.** Scaffold, CLI skeleton, schema, config before any feature code.
 - **Layer 0 performance is non-negotiable.** If capture adds >1% CPU or >30MB RAM, it ships broken.
 - **One component = one agent** when parallelizing builds.
-- **Test without a Mac where you can.** `tests/test_capture_contract.py` and `tests/test_capture_control.py` cover the capture boundary on any OS. Checks that need a real Mac go in `tests/test_macos.py`, which skips elsewhere.
+- **Test without a Mac where you can.** `tests/test_capture_contract.py` and `tests/test_capture_control.py` cover the capture boundary on any OS. Checks that need a real Mac go in `tests/test_macos.py`, which skips off macOS and only runs with `SIFU_MAC_TESTS=1` because it overwrites the clipboard.
 - **Pressure test every deliverable** — run it, verify it works. Not "looks right in the file" but "actually runs."
 - **After each phase gate**, report what shipped and what's next. Don't batch updates.
 
