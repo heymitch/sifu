@@ -26,7 +26,7 @@ def test_macro_shape_and_contract():
     assert m["workflow_id"] == "wf-x"
     s0 = m["steps"][0]
     assert s0["action"] == "click"
-    assert s0["coords"] == {"x": 840, "y": 312, "rel_to": "window"}
+    assert s0["coords"] == {"x": 720, "y": 232, "rel_to": "window"}
     assert s0["frame"]["window_rect"] == [120, 80, 1280, 800]
     assert s0["frame"]["backing_scale"] == 2.0
     assert s0["url"] == "https://app.stripe.com/cart"

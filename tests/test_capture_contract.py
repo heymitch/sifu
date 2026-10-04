@@ -57,3 +57,16 @@ def test_doc_lists_every_event_type():
     doc = DOC.read_text()
     for t in EventType:
         assert f"`{t.value}`" in doc, t.value
+
+
+def test_click_coords_become_window_relative_in_the_macro():
+    from sifu.compiler.macro import build_macro
+
+    # Capture stores the click and the window origin in the same global space.
+    click = {"type": "click", "app": "Chrome", "position_x": 840, "position_y": 312,
+             "window_rect": "[120, 80, 1280, 800]", "display_id": 1,
+             "display_bounds": "[0, 0, 1920, 1080]", "backing_scale": 2.0}
+    assert build_macro("wf", [click])["steps"][0]["coords"] == {"x": 720, "y": 232, "rel_to": "window"}
+
+    no_window = {**click, "window_rect": None}
+    assert build_macro("wf", [no_window])["steps"][0]["coords"] == {"x": 840, "y": 312, "rel_to": "screen"}

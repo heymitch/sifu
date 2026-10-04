@@ -105,7 +105,7 @@ Pixel coordinates of the interaction.
 
 `coords` is `null` when both `position_x` and `position_y` are absent from the row.
 
-`rel_to` is `"window"` when `frame` is non-null, `"screen"` otherwise. NavMacro uses this to resolve the point: window-relative coordinates are offset from `frame.window_rect`; screen-relative coordinates are absolute.
+`rel_to` is `"window"` when `frame` is non-null, `"screen"` otherwise. Capture records clicks in global screen points (see `capture-contract.md`); for `"window"` the compiler subtracts the `frame.window_rect` origin. NavMacro resolves the point by adding that origin back; screen-relative coordinates are absolute.
 
 ### `url`
 
@@ -168,8 +168,8 @@ The following is the real output of `build_macro("wf-demo", rows)` for a two-ste
         "backing_scale": 2.0
       },
       "coords": {
-        "x": 840,
-        "y": 312,
+        "x": 720,
+        "y": 232,
         "rel_to": "window"
       },
       "url": "https://app.stripe.com/cart",
@@ -198,7 +198,7 @@ The following is the real output of `build_macro("wf-demo", rows)` for a two-ste
 ```
 
 **Step 0 notes:**
-- `frame` is present because `window_rect` was recorded. `coords.rel_to` is therefore `"window"`.
+- `frame` is present because `window_rect` was recorded. `coords.rel_to` is therefore `"window"`, and `coords` is the recorded click (840, 312) minus the window origin (120, 80).
 - `url` is the cart page — state at record time, not a target to navigate to.
 - `expected` looks ahead to step 1's `url` (`https://app.stripe.com/checkout`). NavMacro checks this URL is reached before moving on.
 - `screenshot` is `"screenshots/000.jpg"` because a screenshot path was recorded.

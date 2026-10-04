@@ -87,12 +87,13 @@ Older databases may lack `display_id`, `display_bounds`, `window_rect`, `backing
 | `window` | Focused window title. |
 | `description` | One-line summary. SifuBar writes `Clicked 'Save' in Mail`, `Clicked at (x, y) in Mail`, `Shortcut: Cmd+C`, `Typed: ...`, `Command: ...`, `Switched from A to B`, `Window: <title>`. |
 | `element` | Accessibility label of the clicked element, when known. |
-| `position_x`, `position_y` | Click point in global screen points. |
+| `position_x`, `position_y` | Click point in global screen points: origin at the top-left of the main display, y grows downward (macOS `CGEvent.location`). Not window-relative; the compiler makes them window-relative using `window_rect`. |
 | `text_content` | Typed text (`text_input`) or the command line (`command`). |
 | `shortcut` | Chord as text, e.g. `Cmd+C`. |
 | `screenshot_path` | Absolute path to the screenshot taken for this event, or NULL. |
 | `display_id` | Platform id of the display holding the focused window. |
-| `display_bounds`, `window_rect` | JSON `[x, y, w, h]` in global screen points. |
+| `window_rect` | JSON `[x, y, w, h]` of the focused window, in the same global top-left space as `position_x/y` (macOS AX position and size). |
+| `display_bounds` | JSON `[x, y, w, h]` of the display. SifuBar writes `NSScreen.frame`, whose origin is the bottom-left of the main display with y growing upward, a different space from the click. Nothing in the core does math with it. |
 | `backing_scale` | Pixels per point on that display (2.0 on Retina). |
 | `url` | Address-bar URL when the app is a browser. |
 | `session_id` | `sessions.id` of the recording session, `session-<uuid>`. |

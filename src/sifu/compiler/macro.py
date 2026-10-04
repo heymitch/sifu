@@ -56,8 +56,11 @@ def build_macro(workflow_id: str, rows: list) -> dict:
         px, py = row.get("position_x"), row.get("position_y")
         coords = None
         if px is not None and py is not None:
-            coords = {"x": px, "y": py,
-                      "rel_to": "window" if frame else "screen"}
+            if frame:
+                wx, wy = frame["window_rect"][:2]
+                coords = {"x": px - wx, "y": py - wy, "rel_to": "window"}
+            else:
+                coords = {"x": px, "y": py, "rel_to": "screen"}
         nxt = dict(rows[i + 1]) if i + 1 < len(rows) else None
         steps.append({
             "index": i,
