@@ -1,7 +1,7 @@
-"""How `sifu start/stop/pause/resume/sensitive/status` drive SifuBar on macOS.
+"""How `sifu start/stop/pause/resume/sensitive/status` drive the capture process.
 
-Each case runs the real CLI in a subprocess with sys.platform set to darwin
-and HOME pointing at a scratch dir, so nothing here needs macOS or pyobjc.
+Each case runs the real CLI in a subprocess with sys.platform forced (darwin
+unless noted) and HOME pointing at a scratch dir, so nothing here needs macOS.
 SifuBar is "running" when ~/.sifu/sifubar.pid holds a live pid (this test
 process), which means no case launches anything.
 """
@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-DARWIN_CLI = "import sys; sys.platform = 'darwin'; from sifu.cli import main; main()"
+CLI = "import sys; sys.platform = {!r}; from sifu.cli import main; main()"
 
 
 @pytest.fixture
@@ -31,10 +31,10 @@ def _sifubar_running(home: Path):
     (home / ".sifu" / "sifubar.pid").write_text(str(os.getpid()))
 
 
-def _sifu(home: Path, *args: str) -> str:
+def _sifu(home: Path, *args: str, platform: str = "darwin") -> str:
     env = {**os.environ, "HOME": str(home)}
     result = subprocess.run(
-        [sys.executable, "-c", DARWIN_CLI, *args],
+        [sys.executable, "-c", CLI.format(platform), *args],
         env=env, capture_output=True, text=True, timeout=60,
     )
     assert result.returncode == 0, result.stderr
@@ -111,3 +111,15 @@ def test_status_json_reads_state_and_pid(home):
 
 def test_status_when_stopped(home):
     assert _sifu(home, "status") == "  Sifu is not running.\n"
+
+
+def test_start_on_a_platform_without_a_backend(home):
+    _sifubar_running(home)
+    assert _sifu(home, "start", platform="linux") == "No capture backend for linux yet.\n"
+    assert _sent(home) is None
+
+
+def test_status_on_a_platform_without_a_backend(home):
+    _sifubar_running(home)
+    _state(home, status="recording", pid=4242)
+    assert json.loads(_sifu(home, "status", "--json", platform="linux"))["running"] is False
