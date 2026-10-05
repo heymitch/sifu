@@ -8,11 +8,9 @@ version = "0.1.0"
 description = "Local action logger that turns workflow into SOPs, tutorials, and automation"
 requires-python = ">=3.11"
 dependencies = [
-    "pyobjc-framework-Quartz>=10.0",
-    "pyobjc-framework-Cocoa>=10.0",
-    "pyobjc-framework-ApplicationServices>=10.0",
     "click>=8.0",
     "pyyaml>=6.0",
+    "pillow>=10.0",
 ]
 
 [project.optional-dependencies]
@@ -29,7 +27,6 @@ ui = [
 
 [project.scripts]
 sifu = "sifu.cli:main"
-sifubar = "sifu.bar.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

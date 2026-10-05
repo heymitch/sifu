@@ -26,7 +26,7 @@ def test_macro_shape_and_contract():
     assert m["workflow_id"] == "wf-x"
     s0 = m["steps"][0]
     assert s0["action"] == "click"
-    assert s0["coords"] == {"x": 840, "y": 312, "rel_to": "window"}
+    assert s0["coords"] == {"x": 720, "y": 232, "rel_to": "window"}
     assert s0["frame"]["window_rect"] == [120, 80, 1280, 800]
     assert s0["frame"]["backing_scale"] == 2.0
     assert s0["url"] == "https://app.stripe.com/cart"
@@ -45,7 +45,7 @@ def test_macro_degrades_when_frame_null():
 
 def test_macro_empty_rows():
     m = build_macro("wf-empty", [])
-    assert m == {"schema_version": 1, "workflow_id": "wf-empty", "steps": []}
+    assert m == {"schema_version": 1, "coords_version": 2, "workflow_id": "wf-empty", "steps": []}
 
 def test_expected_falls_back_to_window_title_when_no_url():
     rows = [
@@ -108,3 +108,11 @@ def test_compile_single_writes_library_unit(tmp_path, monkeypatch):
     md = (out / "workflow.md").read_text()
     assert md.startswith("# Workflow:")  # deterministic title
     assert "## Step 1" in md
+
+
+def test_malformed_window_rect_counts_as_no_window():
+    for bad in ["[10]", "[]", "nope", "{\"x\": 1}", "[\"a\", \"b\", 3, 4]"]:
+        row = {"type": "click", "app": "Notes", "position_x": 10, "position_y": 20, "window_rect": bad}
+        s = build_macro("wf-bad", [row])["steps"][0]
+        assert s["coords"] == {"x": 10, "y": 20, "rel_to": "screen"}, bad
+        assert s["frame"] is None, bad

@@ -4,38 +4,43 @@ Sifu is a local, always-on action logger that turns workflow into SOPs, tutorial
 
 ## Architecture
 
-5 layers, strictly separated:
-- **Layer 0: Capture Daemon** — CGEventTap, Accessibility API, screenshots. <1% CPU. No LLM. No network.
-- **Layer 1: Pattern Engine** — local sequence detection, no LLM
-- **Layer 2: Compiler** — LLM-powered SOP generation from raw logs
-- **Layer 3: Coach** — LLM-powered efficiency analysis + shortcut suggestions
-- **Layer 4: Automator** — LLM-powered script generation (dev-browser, computer use, bash, AppleScript)
-- **Classifier** — discovers automation capabilities, classifies each workflow step into optimal method (ELIMINATE, WAIT_FOR, API, CLI, BROWSER, MACRO, MANUAL)
+Capture runs in its own process; everything else is the Python core, run on demand.
+
+- **Layer 0: Capture** is a separate process that writes events to SQLite and screenshots to disk. On macOS that is SifuBar.app (Swift, `extras/SifuBar`), using CGEventTap, the Accessibility API and screenshots. <1% CPU. No LLM. No network. The Python core talks to it only through the files in `docs/capture-contract.md`.
+- **Layer 1: Pattern Engine** does local workflow segmentation, no LLM.
+- **Layer 2: Compiler** is deterministic. It turns a segment into a library unit (`workflow.md`, `macro.json`, `meta.json`, screenshots) under `~/.sifu/library/`. No LLM. The user's own agent does the summarizing after `sifu copy-last`.
+- **Layer 3: Coach** reports local efficiency findings, plus optional insights from `claude -p`.
+- **Layer 4: Automator** generates scripts via `claude -p`.
+- **Classifier** discovers automation capabilities and classifies each workflow step into its optimal method (ELIMINATE, WAIT_FOR, API, CLI, BROWSER, MACRO, MANUAL), with optional `claude -p` refinement.
 
 **Rule**: Layer 0 never calls an LLM. It logs events to SQLite and takes screenshots. That's it. Everything else runs on demand.
 
 ## Tech Stack
 
-- Python 3.11+ (pyobjc for macOS APIs)
-- SQLite (event storage)
-- Click (CLI framework)
-- Claude CLI / API (Layers 2-4)
+- Python 3.11+, Click, SQLite for the core and CLI. No pyobjc; it runs on macOS and Linux.
+- Swift for SifuBar.app, the menu bar and macOS capture.
+- FastAPI and Jinja for the `sifu ui` / `sifu open` library browser (`[ui]` extra).
+- Claude CLI for coach insights, the automator and classifier refinement.
 
 ## Key Files
 
-- `PRD.md` — full spec, architecture, build plan, CLI interface
-- `src/sifu/daemon.py` — capture daemon (Layer 0)
-- `src/sifu/cli.py` — CLI entry point
-- `src/sifu/capture/` — mouse, keyboard, app tracking, screenshots
-- `src/sifu/storage/db.py` — SQLite operations
-- `src/sifu/patterns/engine.py` — workflow segmentation
-- `src/sifu/compiler/sop.py` — SOP markdown generation
-- `src/sifu/coach/analyzer.py` — efficiency coaching
-- `src/sifu/automator/generator.py` — automation script generation
-- `src/sifu/classifier/discovery.py` — capability scanning (CLI, MCP, extensions)
-- `src/sifu/classifier/classifier.py` — two-phase step classification
-- `src/sifu/classifier/spec.py` — workflow spec YAML I/O
-- `examples/capabilities.d/` — sample capability descriptors
+- `PRD.md` is the original spec. Its Layers 2-4 predate the deterministic compiler.
+- `docs/capture-contract.md` lists the files and SQLite schema shared by capture and core.
+- `extras/SifuBar/` is the macOS menu bar app and capture engine (Swift).
+- `src/sifu/cli.py` is the CLI entry point.
+- `src/sifu/capture/` reaches the capture process (state, commands, the per-platform `CaptureBackend`; `sifubar.py` on macOS).
+- `src/sifu/daemon.py` is the CLI side of start/stop/pause/resume/sensitive/status, plus post-stop analysis.
+- `src/sifu/events.py` holds the `Event` model and event types.
+- `src/sifu/storage/db.py` holds the SQLite schema and queries.
+- `src/sifu/patterns/engine.py` segments workflows.
+- `src/sifu/compiler/` compiles units (`sop.py`, `render.py`, `macro.py`, `meta.py`, `contract.py`).
+- `src/sifu/library.py` reads and writes library units on disk.
+- `src/sifu/context_cmd.py` builds the `sifu context` / `sifu copy-last` agent briefing.
+- `src/sifu_ui/` is the read-only library browser.
+- `src/sifu/coach/analyzer.py` does efficiency coaching.
+- `src/sifu/automator/generator.py` generates automation scripts.
+- `src/sifu/classifier/` holds `discovery.py`, `classifier.py` and `spec.py`.
+- `examples/capabilities.d/` has sample capability descriptors.
 
 ## Agentic Engineering Laws
 
@@ -62,7 +67,7 @@ INNER (second): Layer 0 (capture) → Layer 1 (patterns) → Layer 2 (compiler) 
 - **Outer layer first.** Scaffold, CLI skeleton, schema, config before any feature code.
 - **Layer 0 performance is non-negotiable.** If capture adds >1% CPU or >30MB RAM, it ships broken.
 - **One component = one agent** when parallelizing builds.
-- **Test capture independently** — mock CGEventTap for unit tests, real tap for integration.
+- **Test without a Mac where you can.** `tests/test_capture_contract.py` and `tests/test_capture_control.py` cover the capture boundary on any OS. Checks that need a real Mac go in `tests/test_macos.py`, which skips off macOS and only runs with `SIFU_MAC_TESTS=1` because it overwrites the clipboard.
 - **Pressure test every deliverable** — run it, verify it works. Not "looks right in the file" but "actually runs."
 - **After each phase gate**, report what shipped and what's next. Don't batch updates.
 

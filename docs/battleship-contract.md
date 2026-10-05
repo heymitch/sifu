@@ -19,6 +19,7 @@ Pure and deterministic — rows in, dict out. No I/O, no LLM calls.
 ```
 {
   "schema_version": 1,
+  "coords_version": 2,
   "workflow_id":   "<string>",
   "steps":         [ <step>, … ]
 }
@@ -27,6 +28,7 @@ Pure and deterministic — rows in, dict out. No I/O, no LLM calls.
 | Field | Type | Notes |
 |---|---|---|
 | `schema_version` | `1` (integer literal) | Always `1` for this version. |
+| `coords_version` | integer, optional | `2`: `coords` with `rel_to: "window"` are relative to `frame.window_rect`. Absent (macros compiled before 2026-10-04): those coords hold the global screen point despite the label, so readers must not add the window origin. |
 | `workflow_id` | string | Opaque identifier supplied by the caller. Treat it as an opaque string; no format, length bound, or character set is guaranteed — the `wf-…` values in examples are illustrative, not a contract. |
 | `steps` | array | Ordered list of step objects, one per recorded event. |
 
@@ -93,7 +95,7 @@ Window geometry at the time of the event.
 
 ### `coords`
 
-Pixel coordinates of the interaction.
+Coordinates of the interaction, in screen points (not pixels; multiply by `frame.backing_scale` for pixels).
 
 ```
 {
@@ -105,7 +107,7 @@ Pixel coordinates of the interaction.
 
 `coords` is `null` when both `position_x` and `position_y` are absent from the row.
 
-`rel_to` is `"window"` when `frame` is non-null, `"screen"` otherwise. NavMacro uses this to resolve the point: window-relative coordinates are offset from `frame.window_rect`; screen-relative coordinates are absolute.
+`rel_to` is `"window"` when `frame` is non-null, `"screen"` otherwise. Capture records clicks in global screen points (see `capture-contract.md`); for `"window"` the compiler subtracts the `frame.window_rect` origin. NavMacro resolves the point by adding that origin back; screen-relative coordinates are absolute.
 
 ### `url`
 
@@ -155,6 +157,7 @@ The following is the real output of `build_macro("wf-demo", rows)` for a two-ste
 ```json
 {
   "schema_version": 1,
+  "coords_version": 2,
   "workflow_id": "wf-demo",
   "steps": [
     {
@@ -168,8 +171,8 @@ The following is the real output of `build_macro("wf-demo", rows)` for a two-ste
         "backing_scale": 2.0
       },
       "coords": {
-        "x": 840,
-        "y": 312,
+        "x": 720,
+        "y": 232,
         "rel_to": "window"
       },
       "url": "https://app.stripe.com/cart",
@@ -198,7 +201,7 @@ The following is the real output of `build_macro("wf-demo", rows)` for a two-ste
 ```
 
 **Step 0 notes:**
-- `frame` is present because `window_rect` was recorded. `coords.rel_to` is therefore `"window"`.
+- `frame` is present because `window_rect` was recorded. `coords.rel_to` is therefore `"window"`, and `coords` is the recorded click (840, 312) minus the window origin (120, 80).
 - `url` is the cart page — state at record time, not a target to navigate to.
 - `expected` looks ahead to step 1's `url` (`https://app.stripe.com/checkout`). NavMacro checks this URL is reached before moving on.
 - `screenshot` is `"screenshots/000.jpg"` because a screenshot path was recorded.

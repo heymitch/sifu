@@ -7,6 +7,7 @@ import json
 from typing import Optional
 
 SCHEMA_VERSION = 1
+COORDS_VERSION = 2  # window coords are relative to window_rect; see battleship-contract.md
 _ACTION = {  # event type -> macro action
     "click": "click", "right_click": "click", "shortcut": "key",
     "text_input": "type", "command": "type",
@@ -25,7 +26,7 @@ def _arr(v) -> Optional[list]:
 
 def _frame(row) -> Optional[dict]:
     wr = _arr(row.get("window_rect"))
-    if wr is None:
+    if not (isinstance(wr, list) and len(wr) == 4 and all(isinstance(v, (int, float)) for v in wr)):
         return None
     return {
         "display_id": row.get("display_id"),
@@ -56,8 +57,11 @@ def build_macro(workflow_id: str, rows: list) -> dict:
         px, py = row.get("position_x"), row.get("position_y")
         coords = None
         if px is not None and py is not None:
-            coords = {"x": px, "y": py,
-                      "rel_to": "window" if frame else "screen"}
+            if frame:
+                wx, wy = frame["window_rect"][:2]
+                coords = {"x": px - wx, "y": py - wy, "rel_to": "window"}
+            else:
+                coords = {"x": px, "y": py, "rel_to": "screen"}
         nxt = dict(rows[i + 1]) if i + 1 < len(rows) else None
         steps.append({
             "index": i,
@@ -71,4 +75,5 @@ def build_macro(workflow_id: str, rows: list) -> dict:
             "key": row.get("shortcut"),
             "expected": _expected(nxt),
         })
-    return {"schema_version": SCHEMA_VERSION, "workflow_id": workflow_id, "steps": steps}
+    return {"schema_version": SCHEMA_VERSION, "coords_version": COORDS_VERSION,
+            "workflow_id": workflow_id, "steps": steps}
